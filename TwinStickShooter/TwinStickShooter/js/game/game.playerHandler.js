@@ -25,40 +25,40 @@ class player { //turn into class
 			rotationAcceleration = 0;
 			// Keyboard configuration for game.events.js (controlKeys must be associated to game.events.keyboard.keyCodes)
 			
-			controlKeys {
-				forward= "w",
-				backward= "s",
-				left= "a",
-				right= "d",
-				jump= "space"
+			controlKeys = {
+				forward : "w",
+				backward : "s",
+				left : "a",
+				right : "d",
+				jump : "space"
 			};
 
 			//controller configuration
-			controllerCodes  {
-				cross = 0,
-				circle = 1,
-				square = 2,
-				triangle = 3,
-				L1 = 4,
-				R1 = 5,
-				L2 = 6,
-				R2 = 7,
-				share = 8,
-				start = 9,
-				L3 = 10,
-				R3 = 11,
-				up = 12,
-				down = 13,
-				left = 14,
-				right = 15,
-				ps = 16
+			controllerCodes =  {
+				cross : 0,
+				circle : 1,
+				square : 2,
+				triangle : 3,
+				L1 : 4,
+				R1 : 5,
+				L2 : 6,
+				R2 : 7,
+				share : 8,
+				start : 9,
+				L3 : 10,
+				R3 : 11,
+				up : 12,
+				down : 13,
+				left : 14,
+				right : 15,
+				ps : 16
 			};
 
-			axisCode  {
-				leftHorizontal= 0,
-				leftVertical= 1,
-				rightHorizontal= 2,
-				leftHorizontal= 3
+			axisCode = {
+				leftHorizontal : 0,
+				leftVertical : 1,
+				rightHorizontal : 2,
+				leftHorizontal : 3
 			};
 			
 			// Methods
@@ -83,7 +83,7 @@ class player { //turn into class
 						//_game.player.isGrounded = (new CANNON.Ray(_game.player.mesh.position, new CANNON.Vec3(0, 0, -1)).intersectBody(event.contact.bi).length > 0);
 				});
 			};
-			
+
 			update = function() {
 				// Basic game logic to update player and camera
 				_game.player.processUserInput();
@@ -164,4 +164,50 @@ class player { //turn into class
 				}
 			};
 		}
+
+window.game.playerHandler = function () {
+	var _playerHandler = {
+	
+		players: {},
+
+		addplayer: function(gamepad) {
+			var temp = new controller(gamepad, _controllerHandler.players, gamepad.index);
+			_controllerHandler.players++;
+		  	_controllerHandler.controllers[gamepad.index] = temp;
+		},
+
+		getControllerByPlayer: function(playerNumber) {
+			for (var i = 0; i < 4; i++) {
+				if (_controllerHandler.controllers[i] != null){
+					if (_controllerHandler.controllers[i].player == playerNumber) {
+						console.log(_controllerHandler.controllers[i]);
+						return _controllerHandler.controllers[i];
+					}
+				}
+			}
+			return null;
+		},	
+
+		disconnecthandler: function(e) {
+		  	_controllerHandler.removegamepad(e.gamepad);
+		},
+
+		removegamepad: function(gamepad) {
+		  	for (var i = 0; i < 4; i++) {
+		  		if (_controllerHandler.controllers[i].gamepad == gamepad) {
+		  			delete controller[i];
+		  			_controllerHandler.players--;
+		  			return;
+		  		}
+		  	}
+		},
+
+		init: function() {
+			window.addEventListener("gamepadconnected", _controllerHandler.updateStatus);
+			window.addEventListener("gamepaddisconnected", _controllerHandler.disconnecthandler);
+		}
+	}
+	
+	return _controllerHandler;
+}
 		
