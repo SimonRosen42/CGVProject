@@ -1,8 +1,7 @@
 window.game = window.game || {}
 
-class Level {
-		// Methods
-	create: function() {
+window.game.levelHandler = function () {
+		create: function() {
 		// Create a solid material for all objects in the world
 		window.game.core._cannon.solidMaterial = window.game.core._cannon.createPhysicsMaterial(new CANNON.Material("solidMaterial"), 0, 0.1);
 		// Define floor settings
@@ -59,7 +58,4 @@ class Level {
 		window.game.core._three.scene.add(grid);
 	}
 }
-
-window.game.levelHandler = function () {
-	
 }
