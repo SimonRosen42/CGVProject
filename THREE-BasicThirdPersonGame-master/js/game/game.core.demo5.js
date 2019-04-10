@@ -1,7 +1,7 @@
 /*
- * Game Core - Demo 1 (Simple demo)
+ * Game Core - Demo 5 (Shadows)
  *
- * A simple example with basic controls (see _game.core.js for an uncommented version of this file)
+ * A simple example that implements THREE.js shadows (same as game.core.demo1.js but with some advancements)
  */
 
 window.game = window.game || {};
@@ -27,14 +27,43 @@ window.game.core = function () {
 			isGrounded: false,
 			jumpHeight: 38,
 
-			// Configuration for player speed
-			speed: 40,
+			// Configuration for player speed (acceleration and maximum speed)
+			speed: 1.5,
+			speedMax: 45,
+			// Configuration for player rotation (rotation acceleration and maximum rotation speed)
+			rotationSpeed: 0.007,
+			rotationSpeedMax: 0.04,
+			// Rotation values
+			rotationRadians: new THREE.Vector3(0, 0, 0),
+			rotationAngleX: null,
+			rotationAngleY: null,
+			// Damping which means deceleration	(values between 0.8 and 0.98 are recommended)
+			damping: 0.9,
+			// Damping or easing for player rotation
+			rotationDamping: 0.8,
+			// Acceleration values
+			acceleration: 0,
+			rotationAcceleration: 0,
+			// Enum for an easier method access to acceleration/rotation
+			playerAccelerationValues: {
+				position: {
+					acceleration: "acceleration",
+					speed: "speed",
+					speedMax: "speedMax"
+				},
+				rotation: {
+					acceleration: "rotationAcceleration",
+					speed: "rotationSpeed",
+					speedMax: "rotationSpeedMax"
+				}
+			},
 
 			// Third-person camera configuration
+			playerCoords: null,
 			cameraCoords: null,
 			// Camera offsets behind the player (horizontally and vertically)
-			cameraOffsetH: 380,
-			cameraOffsetV: 280,
+			cameraOffsetH: 240,
+			cameraOffsetV: 140,
 
 			// Keyboard configuration for game.events.js (controlKeys must be associated to game.events.keyboard.keyCodes)
 			controlKeys: {
@@ -44,34 +73,7 @@ window.game.core = function () {
 				right: "d",
 				jump: "space"
 			},
-
-			controllerCodes :  {
-				cross : 0,
-				circle : 1,
-				square : 2,
-				triangle : 3,
-				L1 : 4,
-				R1 : 5,
-				L2 : 6,
-				R2 : 7,
-				share : 8,
-				start : 9,
-				L3 : 10,
-				R3 : 11,
-				up : 12,
-				down : 13,
-				left : 14,
-				right : 15,
-				ps : 16
-			},
-
-			axisCode : {
-				leftHorizontal : 0,
-				leftVertical : 1,
-				rightHorizontal : 2,
-				rightVertical : 3
-			},
-
+			
 			// Methods
 			create: function() {
 				// Create a global physics material for the player which will be used as ContactMaterial for all other objects in the level
@@ -88,13 +90,21 @@ window.game.core = function () {
 				_game.player.rigidBody = new CANNON.RigidBody(_game.player.mass, _game.player.shape, _cannon.createPhysicsMaterial(_cannon.playerPhysicsMaterial));
 				_game.player.rigidBody.position.set(0, 0, 50);
 				_game.player.mesh = _cannon.addVisual(_game.player.rigidBody, null, _game.player.model.mesh);
+				
+				// Enable shadows
+				_game.player.mesh.castShadow = true;
+				_game.player.mesh.receiveShadow = true;
 
 				// Create a HingeConstraint to limit player's air-twisting - this needs improvement
 				_game.player.orientationConstraint = new CANNON.HingeConstraint(_game.player.rigidBody, new CANNON.Vec3(0, 0, 0), new CANNON.Vec3(0, 0, 1), _game.player.rigidBody, new CANNON.Vec3(0, 0, 1), new CANNON.Vec3(0, 0, 1));
 				_cannon.world.addConstraint(_game.player.orientationConstraint);
 
-				_game.player.rigidBody.postStep = function() { //function to run after rigidbody equations
+				_game.player.rigidBody.postStep = function() {
+					// Reset player's angularVelocity to limit possible exceeding rotation and
+					_game.player.rigidBody.angularVelocity.z = 0;
 
+					// update player's orientation afterwards
+					_game.player.updateOrientation();
 				};
 
 				// Collision event listener for the jump mechanism
@@ -109,14 +119,16 @@ window.game.core = function () {
 			update: function() {
 				// Basic game logic to update player and camera
 				_game.player.processUserInput();
+				_game.player.accelerate();
+				_game.player.rotate();
 				_game.player.updateCamera();
 
 				// Level-specific logic
 				_game.player.checkGameOver();
 			},
 			updateCamera: function() {
-				// Calculate camera coordinates by using Euler radians from a fixed angle (135 degrees)
-				_game.player.cameraCoords = window.game.helpers.polarToCartesian(_game.player.cameraOffsetH, window.game.helpers.degToRad(135));
+				// Calculate camera coordinates by using Euler radians from player's last rotation
+				_game.player.cameraCoords = window.game.helpers.polarToCartesian(_game.player.cameraOffsetH, _game.player.rotationRadians.z);
 
 				// Apply camera coordinates to camera position
 				_three.camera.position.x = _game.player.mesh.position.x + _game.player.cameraCoords.x;
@@ -126,24 +138,108 @@ window.game.core = function () {
 				// Place camera focus on player mesh
 				_three.camera.lookAt(_game.player.mesh.position);
 			},
-
-			moveWithAxis: function(horizontal, vertical) {
-				console.log(horizontal,vertical);
-				_game.player.rigidBody.velocity.set(horizontal * _game.player.speed, vertical * _game.player.speed, _game.player.rigidBody.velocity.z);
-			},
-
-			rotateOnAxis: function(horizontal, vertical) {
-				var polar = window.game.helpers.cartesianToPolar(horizontal,vertical);
-				_cannon.setOnAxis(_game.player.rigidBody, new CANNON.Vec3(0, 0, 1), polar.angle);
-			},
-
-			processUserInput: function() {
-				if (_controllerHandler.getControllerByPlayer(0) != null) { //controller connected
-					_game.player.moveWithAxis(_controllerHandler.getControllerByPlayer(0).axes[_game.player.axisCode.leftHorizontal],_controllerHandler.getControllerByPlayer(0).axes[_game.player.axisCode.leftVertical]);
-					_game.player.rotateOnAxis(_controllerHandler.getControllerByPlayer(0).axes[_game.player.axisCode.rightHorizontal],_controllerHandler.getControllerByPlayer(0).axes[_game.player.axisCode.rightVertical]);
+			updateAcceleration: function(values, direction) {
+				// Distinguish between acceleration/rotation and forward/right (1) and backward/left (-1)
+				if (direction === 1) {
+					// Forward/right
+					if (_game.player[values.acceleration] > -_game.player[values.speedMax]) {
+						if (_game.player[values.acceleration] >= _game.player[values.speedMax] / 2) {
+							_game.player[values.acceleration] = -(_game.player[values.speedMax] / 4);
+						} else {
+							_game.player[values.acceleration] -= _game.player[values.speed];
+						}
+					} else {
+						_game.player[values.acceleration] = -_game.player[values.speedMax];
+					}
+				} else {
+					// Backward/left
+					if (_game.player[values.acceleration] < _game.player[values.speedMax]) {
+						if (_game.player[values.acceleration] <= -(_game.player[values.speedMax] / 2)) {
+							_game.player[values.acceleration] = _game.player[values.speedMax] / 4;
+						} else {
+							_game.player[values.acceleration] += _game.player[values.speed];
+						}
+					} else {
+						_game.player[values.acceleration] = _game.player[values.speedMax];
+					}
 				}
 			},
+			processUserInput: function() {
+				// Jump
+				if (_events.keyboard.pressed[_game.player.controlKeys.jump]) {
+					_game.player.jump();
+				}
 
+				// Movement: forward, backward, left, right
+				if (_events.keyboard.pressed[_game.player.controlKeys.forward]) {
+					_game.player.updateAcceleration(_game.player.playerAccelerationValues.position, 1);
+
+					// Reset orientation in air
+					if (!_cannon.getCollisions(_game.player.rigidBody.index)) {
+						_game.player.rigidBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), _game.player.rotationRadians.z);
+					}
+				}
+
+				if (_events.keyboard.pressed[_game.player.controlKeys.backward]) {
+					_game.player.updateAcceleration(_game.player.playerAccelerationValues.position, -1);
+				}
+
+				if (_events.keyboard.pressed[_game.player.controlKeys.right]) {
+					_game.player.updateAcceleration(_game.player.playerAccelerationValues.rotation, 1);
+				}
+
+				if (_events.keyboard.pressed[_game.player.controlKeys.left]) {
+					_game.player.updateAcceleration(_game.player.playerAccelerationValues.rotation, -1);
+				}
+			},
+			accelerate: function() {
+				// Calculate player coordinates by using current acceleration Euler radians from player's last rotation
+				_game.player.playerCoords = window.game.helpers.polarToCartesian(_game.player.acceleration, _game.player.rotationRadians.z);
+
+				// Set actual XYZ velocity by using calculated Cartesian coordinates
+				_game.player.rigidBody.velocity.set(_game.player.playerCoords.x, _game.player.playerCoords.y, _game.player.rigidBody.velocity.z);
+
+				// Damping
+				if (!_events.keyboard.pressed[_game.player.controlKeys.forward] && !_events.keyboard.pressed[_game.player.controlKeys.backward]) {
+					_game.player.acceleration *= _game.player.damping;
+				}
+			},
+			rotate: function() {
+				// Rotate player around Z axis
+				_cannon.rotateOnAxis(_game.player.rigidBody, new CANNON.Vec3(0, 0, 1), _game.player.rotationAcceleration);
+
+				// Damping
+				if (!_events.keyboard.pressed[_game.player.controlKeys.left] && !_events.keyboard.pressed[_game.player.controlKeys.right]) {
+					_game.player.rotationAcceleration *= _game.player.rotationDamping;
+				}
+			},
+			jump: function() {
+				// Perform a jump if player has collisions and the collision contact is beneath him (ground)
+				if (_cannon.getCollisions(_game.player.rigidBody.index) && _game.player.isGrounded) {
+					_game.player.isGrounded = false;
+					_game.player.rigidBody.velocity.z = _game.player.jumpHeight;
+				}
+			},
+			updateOrientation: function() {
+				// Convert player's Quaternion to Euler radians and save them to _game.player.rotationRadians
+				_game.player.rotationRadians = new THREE.Euler().setFromQuaternion(_game.player.rigidBody.quaternion);
+
+				// Round angles
+				_game.player.rotationAngleX = Math.round(window.game.helpers.radToDeg(_game.player.rotationRadians.x));
+				_game.player.rotationAngleY = Math.round(window.game.helpers.radToDeg(_game.player.rotationRadians.y));
+
+				// Prevent player from being upside-down on a slope - this needs improvement
+				if ((_cannon.getCollisions(_game.player.rigidBody.index) &&
+					((_game.player.rotationAngleX >= 90) ||
+						(_game.player.rotationAngleX <= -90) ||
+						(_game.player.rotationAngleY >= 90) ||
+						(_game.player.rotationAngleY <= -90)))
+					)
+				{
+					// Reset orientation
+					_game.player.rigidBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), _game.player.rotationRadians.z);
+				}
+			},
 			checkGameOver: function () {
 				// Example game over mechanism which resets the game if the player is falling beneath -800
 				if (_game.player.mesh.position.z <= -800) {
@@ -151,40 +247,6 @@ window.game.core = function () {
 				}
 			}
 		},
-
-		enemy: {
-			model : null,
-			mesh : null,
-			collider : null,
-			rigidBody : null,
-			// Enemy mass which affects other rigid bodies in the world
-			mass : 1,
-		
-			acceleration : 1,
-			speedMax : 30,
-		
-			create : function() {
-		
-				_cannon.enemyPhysicsMaterial = _cannon.createPhysicsMaterial(new CANNON.Material("enemyMaterial"), 0.0, 0.0);
-				
-				_game.enemy.collider = new CANNON.Box(new CANNON.Vec3(10,10,10));
-		
-				_game.enemy.rigidBody = new CANNON.RigidBody(_game.enemy.mass, _game.enemy.collider, _cannon.enemyPhysicsMaterial);
-				_game.enemy.rigidBody.position.set(0, 0, 10);
-				var meshVisual = new THREE.CylinderGeometry( 10, 10, 20, 32 );
-				//enemy.userData.model = window.game.core._three
-				_game.enemy.mesh = _cannon.addVisual(_game.enemy.rigidBody, new THREE.MeshLambertMaterial({ color: window.game.static.colors.red }), new THREE.Mesh(meshVisual, new THREE.MeshBasicMaterial({color : 0xff0000})));
-		
-				_game.enemy.rigidBody.addEventListener("collide", function(event) {
-		
-				} );
-			},
-
-			update: function() {
-				//_game.enemy.rigidBody.velocity.set(1,0,10);
-			}
-		},
-
 		level: {
 			// Methods
 			create: function() {
@@ -200,68 +262,15 @@ window.game.core = function () {
 					shape: new CANNON.Box(new CANNON.Vec3(floorSize, floorSize, floorHeight)),
 					mass: 0,
 					position: new CANNON.Vec3(0, 0, -floorHeight),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.black }),
+					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.white }),
 					physicsMaterial: _cannon.solidMaterial
 				});
 
-				// Add movable rigid body (mass = 1)
+				// Add some boxes
 				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
-					mass: 1,
-					position: new CANNON.Vec3(-320, 0, 20),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add static rigid bodies (mass = 0)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
+					shape: new CANNON.Box(new CANNON.Vec3(30, 30, 30)),
 					mass: 0,
-					position: new CANNON.Vec3(-80, -180, 90),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(100, 100, 2)),
-					mass: 0,
-					position: new CANNON.Vec3(140, -420, 175),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add movable rigid body (mass = 1)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
-					mass: 1,
-					position: new CANNON.Vec3(90, -420, 200),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add static rigid body (mass = 0)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(45, 45, 5)),
-					mass: 0,
-					position: new CANNON.Vec3(400, -420, 285),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add movable rigid body (mass = 2)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(10, 25, 230)),
-					mass: 2,
-					position: new CANNON.Vec3(402, -420, 520),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add static rigid bodies (mass = 0)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(45, 45, 5)),
-					mass: 0,
-					position: new CANNON.Vec3(900, -420, 285),
+					position: new CANNON.Vec3(-240, -200, 30 - 1),
 					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
 					physicsMaterial: _cannon.solidMaterial
 				});
@@ -269,7 +278,31 @@ window.game.core = function () {
 				_cannon.createRigidBody({
 					shape: new CANNON.Box(new CANNON.Vec3(30, 30, 30)),
 					mass: 0,
-					position: new CANNON.Vec3(900, -110, 285),
+					position: new CANNON.Vec3(-300, -260, 90),
+					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+					physicsMaterial: _cannon.solidMaterial
+				});
+
+				_cannon.createRigidBody({
+					shape: new CANNON.Box(new CANNON.Vec3(30, 30, 30)),
+					mass: 0,
+					position: new CANNON.Vec3(-180, -200, 150),
+					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+					physicsMaterial: _cannon.solidMaterial
+				});
+
+				_cannon.createRigidBody({
+					shape: new CANNON.Box(new CANNON.Vec3(30, 30, 30)),
+					mass: 0,
+					position: new CANNON.Vec3(-120, -140, 210),
+					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+					physicsMaterial: _cannon.solidMaterial
+				});
+
+				_cannon.createRigidBody({
+					shape: new CANNON.Box(new CANNON.Vec3(30, 30, 30)),
+					mass: 0,
+					position: new CANNON.Vec3(-60, -80, 270),
 					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
 					physicsMaterial: _cannon.solidMaterial
 				});
@@ -290,7 +323,7 @@ window.game.core = function () {
 			// Create player and level
 			_game.player.create();
 			_game.level.create();
-			_game.enemy.create();
+
 			// Initiate the game loop
 			_game.loop();
 		},
@@ -318,11 +351,10 @@ window.game.core = function () {
 		loop: function() {
 			// Assign an id to the animation frame loop
 			_animationFrameLoop = window.requestAnimationFrame(_game.loop);
-			_controllerHandler.updateStatus();
+
 			// Update Cannon.js world and player state
 			_cannon.updatePhysics();
 			_game.player.update();
-			_game.enemy.update();
 
 			// Render visual scene
 			_three.render();
@@ -333,8 +365,6 @@ window.game.core = function () {
 			_three = window.game.three();
 			_cannon = window.game.cannon();
 			_ui = window.game.ui();
-			_controllerHandler = window.game.controllerHandler();
-			_enemyHandler = window.game.enemyHandler();
 
 			// Setup lights for THREE.js
 			_three.setupLights = function () {
@@ -342,9 +372,27 @@ window.game.core = function () {
 				hemiLight.position.set(0, 0, -1);
 				_three.scene.add(hemiLight);
 
-				var pointLight = new THREE.PointLight(window.game.static.colors.white, 0.5);
+				var pointLight = new THREE.PointLight(window.game.static.colors.white, 0.2);
 				pointLight.position.set(0, 0, 500);
 				_three.scene.add(pointLight);
+				
+				// Shadow casting light
+				var spotLight = new THREE.SpotLight(window.game.static.colors.white);
+				spotLight.position.set(1100, 1100, 200);
+				
+				spotLight.castShadow = true;
+				spotLight.shadowDarkness = 0.5;
+				
+				spotLight.shadowMapWidth = 1024;
+				spotLight.shadowMapHeight = 1024;
+				
+				spotLight.shadowCameraNear = 250;
+				spotLight.shadowCameraFar = 3000;
+				spotLight.shadowCameraFov = 70;
+				
+				spotLight.shadowCameraVisible = true;
+				
+				_three.scene.add(spotLight);
 			};
 
 			// Initialize components with options
@@ -352,16 +400,13 @@ window.game.core = function () {
 			_cannon.init(_three);
 			_ui.init();
 			_events.init();
-			_controllerHandler.init();
+			
+			// Enable shadows for THREE.js
+			_three.renderer.shadowMapEnabled = true;
+			_three.renderer.shadowMapType = THREE.PCFSoftShadowMap;
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {
-				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
-					_ui.fadeOut("infoboxIntro");
-				}
-			};
-
-			_controllerHandler.buttonPressed = function() {
 				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
 					_ui.fadeOut("infoboxIntro");
 				}
@@ -374,9 +419,7 @@ window.game.core = function () {
 	var _three;
 	var _cannon;
 	var _ui;
-	var _controllerHandler;
 	var _animationFrameLoop;
-	var _enemyHandler;
 	// Game defaults which will be set one time after first start
 	var _gameDefaults = {
 		player: window.game.helpers.cloneObject(_game.player),

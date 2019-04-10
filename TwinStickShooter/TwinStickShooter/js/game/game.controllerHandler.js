@@ -59,8 +59,12 @@ class controller {
        				this.val[i] = val.value;
        				if (pressedt) flag = true;
 	    		}
-	    		for (i = 0; i < this.axes.length; i++) {
-	      			this.axes[i] = this.axes[i].toFixed(4);
+	    		for (i = 0; i < this.gamePad.axes.length; i++) {
+	    			if ( i == 3 || i ==0)
+	      				this.axes[i] = -1 *this.gamePad.axes[i].toFixed(4);
+	      			else 
+	      				this.axes[i] = this.gamePad.axes[i].toFixed(4);
+	      			if (Math.abs(this.axes[i]) < 0.1) this.axes[i] = 0;
 	    		}
 	    		if (flag) return true;
 	    		else return false;
@@ -69,13 +73,15 @@ class controller {
 
 window.game.controllerHandler = function () {
 	var _controllerHandler = {
-	
+
 		controllers: {},
 		players: 0,
 
 		buttonPressed: function() {
 			
 		},
+
+
 
 		connecthandler: function(e) {
 	  		_controllerHandler.addgamepad(e.gamepad);
@@ -91,7 +97,6 @@ window.game.controllerHandler = function () {
 			for (var i = 0; i < 4; i++) {
 				if (_controllerHandler.controllers[i] != null){
 					if (_controllerHandler.controllers[i].player == playerNumber) {
-						console.log(_controllerHandler.controllers[i]);
 						return _controllerHandler.controllers[i];
 					}
 				}
@@ -125,7 +130,7 @@ window.game.controllerHandler = function () {
 		    	}
 		  }
 
-		  requestAnimationFrame(_controllerHandler.updateStatus);
+		  window.requestAnimationFrame(_controllerHandler.updateStatus);
 		},
 
 		scangamepads: function() {

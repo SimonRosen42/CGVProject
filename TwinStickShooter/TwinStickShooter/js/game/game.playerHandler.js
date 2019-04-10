@@ -1,8 +1,8 @@
 window.game = window.game || {};
 
-class player { //turn into class
+class Player { //turn into class
 			// Attributes
-			playerNumber = 0,
+			playerNumber = 0;
 			// Player entity including mesh and rigid body
 			model = null;
 			mesh = null;
@@ -10,7 +10,6 @@ class player { //turn into class
 			rigidBody = null;
 			// Player mass which affects other rigid bodies in the world
 			mass = 3;
-
 			// Configuration for player speed (acceleration and maximum speed)
 			speed = 1.5;
 			speedMax = 45;
@@ -64,9 +63,9 @@ class player { //turn into class
 			// Methods
 			create = function() {
 				// Create a global physics material for the player which will be used as ContactMaterial for all other objects in the level
-				_cannon.playerPhysicsMaterial = new CANNON.Material("playerMaterial");
+				window.game.core._cannon.playerPhysicsMaterial = new CANNON.Material("playerMaterial");
 				// Create a player character based on an imported 3D model that was already loaded as JSON into game.models.player
-				_game.player.model = _three.createModel(window.game.models.player, 12, [
+				_game.player.model = window.game.core._three.createModel(window.game.models.player, 12, [
 					new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
 					new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
 				]);
@@ -75,7 +74,7 @@ class player { //turn into class
 				_game.player.shape = new CANNON.Box(_game.player.model.halfExtents);
 				_game.player.rigidBody = new CANNON.RigidBody(_game.player.mass, _game.player.shape, _cannon.createPhysicsMaterial(_cannon.playerPhysicsMaterial));
 				_game.player.rigidBody.position.set(0, 0, 50);
-				_game.player.mesh = _cannon.addVisual(_game.player.rigidBody, null, _game.player.model.mesh);
+				_game.player.mesh = window.game.core._cannon.addVisual(_game.player.rigidBody, null, _game.player.model.mesh);
 				// Collision event listener for the jump mechanism
 				_game.player.rigidBody.addEventListener("collide", function(event) {
 					// Checks if player's is on ground
@@ -107,7 +106,7 @@ class player { //turn into class
 				_three.camera.lookAt(_game.player.mesh.position);
 			};
 
-			processUserInput: function() {
+			processUserInput = function() {
 				// Jump
 				if ((_controllerHandler.getControllerByPlayer(0).pressed[_game.player.controllerCodes.cross]) || (_events.keyboard.pressed[_game.player.controlKeys.jump])) {
 					_game.player.jump();
@@ -136,7 +135,7 @@ class player { //turn into class
 				}
 			};
 
-			updateOrientation: function() {
+			updateOrientation = function() {
 				// Convert player's Quaternion to Euler radians and save them to _game.player.rotationRadians
 				_game.player.rotationRadians = new THREE.Euler().setFromQuaternion(_game.player.rigidBody.quaternion);
 
@@ -157,7 +156,7 @@ class player { //turn into class
 				}
 			};
 
-			checkGameOver: function () {
+			checkGameOver = function () {
 				// Example game over mechanism which resets the game if the player is falling beneath -800
 				if (_game.player.mesh.position.z <= -800) {
 					_game.destroy();
@@ -208,6 +207,6 @@ window.game.playerHandler = function () {
 		}
 	}
 	
-	return _controllerHandler;
+	return _playerHandler;
 }
 		

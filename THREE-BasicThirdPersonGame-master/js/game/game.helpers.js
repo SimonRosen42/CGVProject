@@ -14,13 +14,6 @@ window.game.helpers = {
 			y: vectorLength * Math.sin(vectorDirection)
 		};
 	},
-	//convert from cartesian to polar coordinates
-	cartesianToPolar: function(x, y) {
-		return {
-			length: Math.sqrt(Math.pow(x,2) + Math.pow(y,2)),
-			angle: Math.atan2(y,x)
-		}
-	},
 	// Convert radians to degrees (1 radian = 57.3 degrees => PI * radian = 180 degrees)
 	radToDeg: function(radians) {
 		return radians * (180 / Math.PI);

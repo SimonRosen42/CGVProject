@@ -27,8 +27,6 @@ window.game.cannon = function() {
 		timestep: 1 / 8,
 		// Player physics material that will be assigned in game.core.js
 		playerPhysicsMaterial: null,
-		// Enemy physics material
-		enemyPhysicsMaterial: null,
 		// Solid material for all other level objects
 		solidMaterial: null,
 
@@ -84,9 +82,6 @@ window.game.cannon = function() {
 			var rotationQuaternion = new CANNON.Quaternion();
 			rotationQuaternion.setFromAxisAngle(axis, radians);
 			rigidBody.quaternion = rotationQuaternion.mult(rigidBody.quaternion);
-		},
-		setOnAxis: function(rigidBody, axis, radians) {
-			rigidBody.quaternion.setFromAxisAngle(axis, radians);
 		},
 		createRigidBody: function(options) {
 			// Creates a new rigid body based on specific options
