@@ -1,210 +1,192 @@
 window.game = window.game || {};
 
 class Player { //turn into class
-			// Attributes
-			playerNumber = 0;
-			// Player entity including mesh and rigid body
-			model = null;
-			mesh = null;
-			shape = null;
-			rigidBody = null;
-			// Player mass which affects other rigid bodies in the world
-			mass = 3;
-			// Configuration for player speed (acceleration and maximum speed)
-			speed = 1.5;
-			speedMax = 45;
-			// Configuration for player rotation (rotation acceleration and maximum rotation speed)
-			rotationSpeed = 0.007;
-			rotationSpeedMax = 0.04;
-			// Rotation values
-			rotationRadians = new THREE.Vector3(0, 0, 0);
-			rotationAngleY = null;
-			// Acceleration values
-			acceleration = 0;
-			rotationAcceleration = 0;
-			// Keyboard configuration for game.events.js (controlKeys must be associated to game.events.keyboard.keyCodes)
-			
-			controlKeys = {
-				forward : "w",
-				backward : "s",
-				left : "a",
-				right : "d",
-				jump : "space"
-			};
+	constructor(controller) {
+		this.controller = controller;
+		this.model = null;
+		this.mesh = null;
+		this.shape = null;
+		this.rigidBody = null;
+		// Player mass which affects other rigid bodies in the world
+		this.mass = 3;
+		// HingeConstraint to limit player's air-twisting
+		this.orientationConstraint = null;
+		// Jump flags
+		this.isGrounded = false;
+		this.jumpHeight = 38;
+		// Configuration for player speed
+		this.speed = 40;
+		// Third-person camera configuration
+		this.cameraCoords = null;
+		// Camera offsets behind the player (horizontally and vertically)
+		this.cameraOffsetH = 380;
+		this.cameraOffsetV = 280;
+		// Keyboard configuration for game.events.js (controlKeys must be associated to game.events.keyboard.keyCodes)
+		this.controlKeys = {
+			forward: "w",
+			backward: "s",
+			left: "a",
+			right: "d",
+			jump: "space"
+		};
 
-			//controller configuration
-			controllerCodes =  {
-				cross : 0,
-				circle : 1,
-				square : 2,
-				triangle : 3,
-				L1 : 4,
-				R1 : 5,
-				L2 : 6,
-				R2 : 7,
-				share : 8,
-				start : 9,
-				L3 : 10,
-				R3 : 11,
-				up : 12,
-				down : 13,
-				left : 14,
-				right : 15,
-				ps : 16
-			};
+		this.controllerCodes =  {
+			cross : 0,
+			circle : 1,
+			square : 2,
+			triangle : 3,
+			L1 : 4,
+			R1 : 5,
+			L2 : 6,
+			R2 : 7,
+			share : 8,
+			start : 9,
+			L3 : 10,
+			R3 : 11,
+			up : 12,
+			down : 13,
+			left : 14,
+			right : 15,
+			ps : 16
+		};
 
-			axisCode = {
-				leftHorizontal : 0,
-				leftVertical : 1,
-				rightHorizontal : 2,
-				leftHorizontal : 3
-			};
-			
-			// Methods
-			create = function() {
-				// Create a global physics material for the player which will be used as ContactMaterial for all other objects in the level
-				window.game.core._cannon.playerPhysicsMaterial = new CANNON.Material("playerMaterial");
-				// Create a player character based on an imported 3D model that was already loaded as JSON into game.models.player
-				_game.player.model = window.game.core._three.createModel(window.game.models.player, 12, [
-					new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
-					new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
-				]);
+		this.axisCode = {
+			leftHorizontal : 0,
+			leftVertical : 1,
+			rightHorizontal : 2,
+			rightVertical : 3
+		};
+	}
+		// Methods
+	create(cannon, three) {
+		// Create a player character based on an imported 3D model that was already loaded as JSON into game.models.player
+		this.model = three.createModel(window.game.models.player, 12, [
+			new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
+			new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
+		]);
+		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
+		this.shape = new CANNON.Box(this.model.halfExtents);
+		this.rigidBody = new CANNON.RigidBody(this.mass, this.shape, cannon.createPhysicsMaterial(cannon.playerPhysicsMaterial));
+		this.rigidBody.position.set(0, 0, 50);
+		this.mesh = cannon.addVisual(this.rigidBody, null, this.model.mesh);
+		// Create a HingeConstraint to limit player's air-twisting - this needs improvement
+		this.orientationConstraint = new CANNON.HingeConstraint(this.rigidBody, new CANNON.Vec3(0, 0, 0), new CANNON.Vec3(0, 0, 1), this.rigidBody, new CANNON.Vec3(0, 0, 1), new CANNON.Vec3(0, 0, 1));
+		cannon.world.addConstraint(this.orientationConstraint);
+		// this.rigidBody.postStep = function() { //function to run after rigidbody equations
+		// };
+		// Collision event listener for the jump mechanism
+		// this.rigidBody.addEventListener("collide", function(event) {
+		// 	// Checks if player's is on ground
+		// 	if (!this.isGrounded) {
+		// 		 Ray intersection test to check if player is colliding with an object beneath him
+		// 		this.isGrounded = (new CANNON.Ray(this.mesh.position, new CANNON.Vec3(0, 0, -1)).intersectBody(event.contact.bi).length > 0);
+		// 	}
+		// });
+	}
 
-				// Create the shape, mesh and rigid body for the player character and assign the physics material to it
-				_game.player.shape = new CANNON.Box(_game.player.model.halfExtents);
-				_game.player.rigidBody = new CANNON.RigidBody(_game.player.mass, _game.player.shape, _cannon.createPhysicsMaterial(_cannon.playerPhysicsMaterial));
-				_game.player.rigidBody.position.set(0, 0, 50);
-				_game.player.mesh = window.game.core._cannon.addVisual(_game.player.rigidBody, null, _game.player.model.mesh);
-				// Collision event listener for the jump mechanism
-				_game.player.rigidBody.addEventListener("collide", function(event) {
-					// Checks if player's is on ground
-						// Ray intersection test to check if player is colliding with an object beneath him
-						//_game.player.isGrounded = (new CANNON.Ray(_game.player.mesh.position, new CANNON.Vec3(0, 0, -1)).intersectBody(event.contact.bi).length > 0);
-				});
-			};
+	destroy(cannon) {
+		cannon.removeVisual(this.rigidBody);
+		this.controller.player = null;
+	}
 
-			update = function() {
-				// Basic game logic to update player and camera
-				_game.player.processUserInput();
-				_game.player.accelerate();
-				_game.player.rotate();
+	update(cannon,three,game,controllerHandler) {
+		// Basic game logic to update player and camera
+		this.processUserInput(cannon, controllerHandler);
+		this.updateCamera(three);
+		// Level-specific logic
+		this.checkGameOver(game);
+	}
 
-				// Level-specific logic
-				_game.player.checkGameOver();
-			};
+	updateCamera(three) {
+		// Calculate camera coordinates by using Euler radians from a fixed angle (135 degrees)
+		this.cameraCoords = window.game.helpers.polarToCartesian(this.cameraOffsetH, window.game.helpers.degToRad(135));
+		// Apply camera coordinates to camera position
+		three.camera.position.x = this.mesh.position.x + this.cameraCoords.x;
+		three.camera.position.y = this.mesh.position.y + this.cameraCoords.y;
+		three.camera.position.z = this.mesh.position.z + this.cameraOffsetV;
+		// Place camera focus on player mesh
+		three.camera.lookAt(this.mesh.position);
+	}
 
-			updateCamera = function() {
-				// Calculate camera coordinates by using Euler radians from player's last rotation
-				_game.player.cameraCoords = window.game.helpers.polarToCartesian(_game.player.cameraOffsetH, _game.player.rotationRadians.z);
+	moveWithAxis(horizontal, vertical) {
+		this.rigidBody.velocity.set(horizontal * this.speed, vertical * this.speed, this.rigidBody.velocity.z);
+	}
 
-				// Apply camera coordinates to camera position
-				_three.camera.position.x = _game.player.mesh.position.x + _game.player.cameraCoords.x;
-				_three.camera.position.y = _game.player.mesh.position.y + _game.player.cameraCoords.y;
-				_three.camera.position.z = _game.player.mesh.position.z + _game.player.cameraOffsetV;
+	rotateOnAxis(horizontal, vertical, cannon) {
+		var polar = window.game.helpers.cartesianToPolar(horizontal,vertical);
+		cannon.setOnAxis(this.rigidBody, new CANNON.Vec3(0, 0, 1), polar.angle);
+	}
 
-				// Place camera focus on player mesh
-				_three.camera.lookAt(_game.player.mesh.position);
-			};
-
-			processUserInput = function() {
-				// Jump
-				if ((_controllerHandler.getControllerByPlayer(0).pressed[_game.player.controllerCodes.cross]) || (_events.keyboard.pressed[_game.player.controlKeys.jump])) {
-					_game.player.jump();
-				}
-
-				// Movement: forward, backward, left, right
-				if ((_controllerHandler.getControllerByPlayer(0).pressed[_game.player.controllerCodes.up]) || (_events.keyboard.pressed[_game.player.controlKeys.forward])) {
-					_game.player.updateAcceleration(_game.player.playerAccelerationValues.position, 1);
-
-					// Reset orientation in air
-					if (!_cannon.getCollisions(_game.player.rigidBody.index)) {
-						_game.player.rigidBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), _game.player.rotationRadians.z);
-					}
-				}
-
-				if ((_controllerHandler.getControllerByPlayer(0).pressed[_game.player.controllerCodes.down]) || (_events.keyboard.pressed[_game.player.controlKeys.backward])) {
-					_game.player.updateAcceleration(_game.player.playerAccelerationValues.position, -1);
-				}
-
-				if ((_controllerHandler.getControllerByPlayer(0).pressed[_game.player.controllerCodes.right]) || (_events.keyboard.pressed[_game.player.controlKeys.right])) {
-					_game.player.updateAcceleration(_game.player.playerAccelerationValues.rotation, 1);
-				}
-
-				if ((_controllerHandler.getControllerByPlayer(0).pressed[_game.player.controllerCodes.left]) || (_events.keyboard.pressed[_game.player.controlKeys.left])) {
-					_game.player.updateAcceleration(_game.player.playerAccelerationValues.rotation, -1);
-				}
-			};
-
-			updateOrientation = function() {
-				// Convert player's Quaternion to Euler radians and save them to _game.player.rotationRadians
-				_game.player.rotationRadians = new THREE.Euler().setFromQuaternion(_game.player.rigidBody.quaternion);
-
-				// Round angles
-				_game.player.rotationAngleX = Math.round(window.game.helpers.radToDeg(_game.player.rotationRadians.x));
-				_game.player.rotationAngleY = Math.round(window.game.helpers.radToDeg(_game.player.rotationRadians.y));
-
-				// Prevent player from being upside-down on a slope - this needs improvement
-				if ((_cannon.getCollisions(_game.player.rigidBody.index) &&
-					((_game.player.rotationAngleX >= 90) ||
-						(_game.player.rotationAngleX <= -90) ||
-						(_game.player.rotationAngleY >= 90) ||
-						(_game.player.rotationAngleY <= -90)))
-					)
-				{
-					// Reset orientation
-					_game.player.rigidBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), _game.player.rotationRadians.z);
-				}
-			};
-
-			checkGameOver = function () {
-				// Example game over mechanism which resets the game if the player is falling beneath -800
-				if (_game.player.mesh.position.z <= -800) {
-					_game.destroy();
-				}
-			};
+	processUserInput(cannon, controllerHandler) {
+		if (this.controller != null) { //controller connected
+			this.moveWithAxis(this.controller.axes[this.axisCode.leftHorizontal],this.controller.axes[this.axisCode.leftVertical]);
+			this.rotateOnAxis(this.controller.axes[this.axisCode.rightHorizontal],this.controller.axes[this.axisCode.rightVertical],cannon);
 		}
+	}
+
+	checkGameOver(game) {
+		// Example game over mechanism which resets the game if the player is falling beneath -800
+		if (this.mesh.position.z <= -800) {
+			game.destroy();
+		}
+	}
+};
 
 window.game.playerHandler = function () {
-	var _playerHandler = {
-	
-		players: {},
+	var _playerHandler = {	
 
-		addplayer: function(gamepad) {
-			var temp = new controller(gamepad, _controllerHandler.players, gamepad.index);
-			_controllerHandler.players++;
-		  	_controllerHandler.controllers[gamepad.index] = temp;
+		players: 0,
+		cannon: null,
+		three: null,
+		game: null,
+		controllerHandler: null,
+
+		player: [],
+
+		addPlayer: function(controller) {
+			var temp = new Player(controller);
+			temp.create(_playerHandler.cannon, _playerHandler.three);
+			_playerHandler.players++;
+		  	_playerHandler.player.push(temp);
 		},
 
-		getControllerByPlayer: function(playerNumber) {
-			for (var i = 0; i < 4; i++) {
-				if (_controllerHandler.controllers[i] != null){
-					if (_controllerHandler.controllers[i].player == playerNumber) {
-						console.log(_controllerHandler.controllers[i]);
-						return _controllerHandler.controllers[i];
-					}
+		updatePlayers: function() {
+			if (_playerHandler.player[0] != null) {
+				for (var i = _playerHandler.player.length - 1; i >= 0; i--) {
+					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,_playerHandler.controllerHandler);
 				}
 			}
-			return null;
-		},	
-
-		disconnecthandler: function(e) {
-		  	_controllerHandler.removegamepad(e.gamepad);
 		},
 
-		removegamepad: function(gamepad) {
-		  	for (var i = 0; i < 4; i++) {
-		  		if (_controllerHandler.controllers[i].gamepad == gamepad) {
-		  			delete controller[i];
-		  			_controllerHandler.players--;
-		  			return;
-		  		}
-		  	}
+		removePlayer: function(p) {
+			for (var i = _playerHandler.player.length - 1; i >= 0; i--) {
+				if (_playerHandler.player[i] == p) {
+					_playerHandler.players--;
+					_playerHandler.player[i].destroy(_playerHandler.cannon);
+					_playerHandler.player.splice(i, 1);
+					return;
+				}
+			}
 		},
 
-		init: function() {
-			window.addEventListener("gamepadconnected", _controllerHandler.updateStatus);
-			window.addEventListener("gamepaddisconnected", _controllerHandler.disconnecthandler);
+		destroy: function() {
+			_playerHandler.players = 0;
+			var j;
+			for (j in _playerHandler.player) {
+				_playerHandler.player[j].destroy(_playerHandler.cannon);
+			}
+			_playerHandler.player.splice(0,_playerHandler.player.length);
+		},
+
+		init: function(c,t,g,ch) {
+			_playerHandler.cannon = c;
+			_playerHandler.three = t;
+			_playerHandler.game = g;
+			_playerHandler.controllerHandler = ch;
+			// Create a global physics material for the player which will be used as ContactMaterial for all other objects in the level
+			_playerHandler.cannon.playerPhysicsMaterial = new CANNON.Material("playerMaterial");
 		}
+
 	}
 	
 	return _playerHandler;

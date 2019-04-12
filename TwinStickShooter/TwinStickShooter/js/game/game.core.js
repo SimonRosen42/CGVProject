@@ -9,149 +9,6 @@ window.game = window.game || {};
 window.game.core = function () {
 	var _game = {
 		// Attributes
-		player: {
-			// Attributes
-
-			// Player entity including mesh and rigid body
-			model: null,
-			mesh: null,
-			shape: null,
-			rigidBody: null,
-			// Player mass which affects other rigid bodies in the world
-			mass: 3,
-
-			// HingeConstraint to limit player's air-twisting
-			orientationConstraint: null,
-
-			// Jump flags
-			isGrounded: false,
-			jumpHeight: 38,
-
-			// Configuration for player speed
-			speed: 40,
-
-			// Third-person camera configuration
-			cameraCoords: null,
-			// Camera offsets behind the player (horizontally and vertically)
-			cameraOffsetH: 380,
-			cameraOffsetV: 280,
-
-			// Keyboard configuration for game.events.js (controlKeys must be associated to game.events.keyboard.keyCodes)
-			controlKeys: {
-				forward: "w",
-				backward: "s",
-				left: "a",
-				right: "d",
-				jump: "space"
-			},
-
-			controllerCodes :  {
-				cross : 0,
-				circle : 1,
-				square : 2,
-				triangle : 3,
-				L1 : 4,
-				R1 : 5,
-				L2 : 6,
-				R2 : 7,
-				share : 8,
-				start : 9,
-				L3 : 10,
-				R3 : 11,
-				up : 12,
-				down : 13,
-				left : 14,
-				right : 15,
-				ps : 16
-			},
-
-			axisCode : {
-				leftHorizontal : 0,
-				leftVertical : 1,
-				rightHorizontal : 2,
-				rightVertical : 3
-			},
-
-			// Methods
-			create: function() {
-				// Create a global physics material for the player which will be used as ContactMaterial for all other objects in the level
-				_cannon.playerPhysicsMaterial = new CANNON.Material("playerMaterial");
-
-				// Create a player character based on an imported 3D model that was already loaded as JSON into game.models.player
-				_game.player.model = _three.createModel(window.game.models.player, 12, [
-					new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
-					new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
-				]);
-
-				// Create the shape, mesh and rigid body for the player character and assign the physics material to it
-				_game.player.shape = new CANNON.Box(_game.player.model.halfExtents);
-				_game.player.rigidBody = new CANNON.RigidBody(_game.player.mass, _game.player.shape, _cannon.createPhysicsMaterial(_cannon.playerPhysicsMaterial));
-				_game.player.rigidBody.position.set(0, 0, 50);
-				_game.player.mesh = _cannon.addVisual(_game.player.rigidBody, null, _game.player.model.mesh);
-
-				// Create a HingeConstraint to limit player's air-twisting - this needs improvement
-				_game.player.orientationConstraint = new CANNON.HingeConstraint(_game.player.rigidBody, new CANNON.Vec3(0, 0, 0), new CANNON.Vec3(0, 0, 1), _game.player.rigidBody, new CANNON.Vec3(0, 0, 1), new CANNON.Vec3(0, 0, 1));
-				_cannon.world.addConstraint(_game.player.orientationConstraint);
-
-				_game.player.rigidBody.postStep = function() { //function to run after rigidbody equations
-
-				};
-
-				// Collision event listener for the jump mechanism
-				_game.player.rigidBody.addEventListener("collide", function(event) {
-					// Checks if player's is on ground
-					if (!_game.player.isGrounded) {
-						// Ray intersection test to check if player is colliding with an object beneath him
-						_game.player.isGrounded = (new CANNON.Ray(_game.player.mesh.position, new CANNON.Vec3(0, 0, -1)).intersectBody(event.contact.bi).length > 0);
-					}
-				});
-			},
-			update: function() {
-				// Basic game logic to update player and camera
-				_game.player.processUserInput();
-				_game.player.updateCamera();
-
-				// Level-specific logic
-				_game.player.checkGameOver();
-			},
-			updateCamera: function() {
-				// Calculate camera coordinates by using Euler radians from a fixed angle (135 degrees)
-				_game.player.cameraCoords = window.game.helpers.polarToCartesian(_game.player.cameraOffsetH, window.game.helpers.degToRad(135));
-
-				// Apply camera coordinates to camera position
-				_three.camera.position.x = _game.player.mesh.position.x + _game.player.cameraCoords.x;
-				_three.camera.position.y = _game.player.mesh.position.y + _game.player.cameraCoords.y;
-				_three.camera.position.z = _game.player.mesh.position.z + _game.player.cameraOffsetV;
-
-				// Place camera focus on player mesh
-				_three.camera.lookAt(_game.player.mesh.position);
-			},
-
-			moveWithAxis: function(horizontal, vertical) {
-				console.log(horizontal,vertical);
-				_game.player.rigidBody.velocity.set(horizontal * _game.player.speed, vertical * _game.player.speed, _game.player.rigidBody.velocity.z);
-			},
-
-			rotateOnAxis: function(horizontal, vertical) {
-				var polar = window.game.helpers.cartesianToPolar(horizontal,vertical);
-				_cannon.setOnAxis(_game.player.rigidBody, new CANNON.Vec3(0, 0, 1), polar.angle);
-			},
-
-			processUserInput: function() {
-				if (_controllerHandler.getControllerByPlayer(0) != null) { //controller connected
-					_game.player.moveWithAxis(_controllerHandler.getControllerByPlayer(0).axes[_game.player.axisCode.leftHorizontal],_controllerHandler.getControllerByPlayer(0).axes[_game.player.axisCode.leftVertical]);
-					_game.player.rotateOnAxis(_controllerHandler.getControllerByPlayer(0).axes[_game.player.axisCode.rightHorizontal],_controllerHandler.getControllerByPlayer(0).axes[_game.player.axisCode.rightVertical]);
-				}
-			},
-
-			checkGameOver: function () {
-				// Example game over mechanism which resets the game if the player is falling beneath -800
-				if (_game.player.mesh.position.z <= -800) {
-					_game.destroy();
-				}
-			}
-		},
-
 		enemy: {
 			model : null,
 			mesh : null,
@@ -286,9 +143,7 @@ window.game.core = function () {
 		init: function(options) {
 			// Setup necessary game components (_events, _three, _cannon, _ui)
 			_game.initComponents(options);
-
 			// Create player and level
-			_game.player.create();
 			_game.level.create();
 			_game.enemy.create();
 			// Initiate the game loop
@@ -303,13 +158,13 @@ window.game.core = function () {
 			_cannon.setup();
 			_three.destroy();
 			_three.setup();
+			_playerHandler.destroy();
 
 			// Recreate player and level objects by using initial values which were copied at the first start
-			_game.player = window.game.helpers.cloneObject(_gameDefaults.player);
+			//_game.player = window.game.helpers.cloneObject(_gameDefaults.player);
 			_game.level = window.game.helpers.cloneObject(_gameDefaults.level);
 
-			// Create player and level again
-			_game.player.create();
+			// Create level again
 			_game.level.create();
 
 			// Continue with the game loop
@@ -317,13 +172,12 @@ window.game.core = function () {
 		},
 		loop: function() {
 			// Assign an id to the animation frame loop
-			_animationFrameLoop = window.requestAnimationFrame(_game.loop);
+			_animationFrameLoop =  window.requestAnimationFrame(_game.loop);
 			_controllerHandler.updateStatus();
 			// Update Cannon.js world and player state
 			_cannon.updatePhysics();
-			_game.player.update();
+			_playerHandler.updatePlayers();
 			_game.enemy.update();
-
 			// Render visual scene
 			_three.render();
 		},
@@ -335,6 +189,7 @@ window.game.core = function () {
 			_ui = window.game.ui();
 			_controllerHandler = window.game.controllerHandler();
 			_enemyHandler = window.game.enemyHandler();
+			_playerHandler = window.game.playerHandler();
 
 			// Setup lights for THREE.js
 			_three.setupLights = function () {
@@ -352,7 +207,8 @@ window.game.core = function () {
 			_cannon.init(_three);
 			_ui.init();
 			_events.init();
-			_controllerHandler.init();
+			_controllerHandler.init(_playerHandler);
+			_playerHandler.init(_cannon,_three,_game,_controllerHandler);
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {
@@ -361,11 +217,11 @@ window.game.core = function () {
 				}
 			};
 
-			_controllerHandler.buttonPressed = function() {
-				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
-					_ui.fadeOut("infoboxIntro");
-				}
-			};
+			 _controllerHandler.anyControllerButtonPressed = function() {
+			 	if (!_ui.hasClass("infoboxIntro", "fade-out")) {
+			 		_ui.fadeOut("infoboxIntro");
+			 	}
+			 };
 		}
 	};
 
@@ -377,9 +233,10 @@ window.game.core = function () {
 	var _controllerHandler;
 	var _animationFrameLoop;
 	var _enemyHandler;
+	var _playerHandler;
 	// Game defaults which will be set one time after first start
 	var _gameDefaults = {
-		player: window.game.helpers.cloneObject(_game.player),
+		// player: window.game.helpers.cloneObject(_game.player),
 		level: window.game.helpers.cloneObject(_game.level)
 	};
 

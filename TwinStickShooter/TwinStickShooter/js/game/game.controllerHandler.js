@@ -2,16 +2,12 @@ window.game = window.game || {};
 
 class controller {
 
-	gamePad;
-	player;
-	gamepadIndex;
-
-	constructor(gamepad, p, i) {
+	constructor(gamepad, i) {
 		this.gamePad = gamepad;
-		this.player = p;
+		this.player = null;
 		this.gamepadIndex = i;
 	}
-			// keyCodes = {
+			// keyCodesPS4 = { 
 			// 	0: "cross",
 			// 	1: "circle",
 			// 	2: "square",
@@ -31,11 +27,11 @@ class controller {
 			// 	16: "ps",
 			// };
 
-			// axisCode = {
+			// axisCodePS4 = {
 			// 	0: "leftHorizontal",
 			// 	1: "leftVertical",
 			// 	2: "rightHorizontal",
-			// 	3: "leftHorizontal"
+			// 	3: "rightVertical"
 			// };
 
 			pressed = {
@@ -74,30 +70,25 @@ class controller {
 window.game.controllerHandler = function () {
 	var _controllerHandler = {
 
-		controllers: {},
-		players: 0,
-
-		buttonPressed: function() {
-			
-		},
-
-
+		controller: [],
+		controllers: 0,
+		playerHandler: null,
 
 		connecthandler: function(e) {
 	  		_controllerHandler.addgamepad(e.gamepad);
 		},
 
 		addgamepad: function(gamepad) {
-			var temp = new controller(gamepad, _controllerHandler.players, gamepad.index);
-			_controllerHandler.players++;
-		  	_controllerHandler.controllers[gamepad.index] = temp;
+			var temp = new controller(gamepad, gamepad.index);
+			_controllerHandler.controllers++;
+		  	_controllerHandler.controller.push(temp);
 		},
 
 		getControllerByPlayer: function(playerNumber) {
-			for (var i = 0; i < 4; i++) {
-				if (_controllerHandler.controllers[i] != null){
-					if (_controllerHandler.controllers[i].player == playerNumber) {
-						return _controllerHandler.controllers[i];
+			for (var i = 0; i < _controllerHandler.controller.length; i++) {
+				if (_controllerHandler.controller[i] != null){
+					if (_controllerHandler.controller[i].player == playerNumber) {
+						return _controllerHandler.controller[i];
 					}
 				}
 			}
@@ -109,10 +100,11 @@ window.game.controllerHandler = function () {
 		},
 
 		removegamepad: function(gamepad) {
-		  	for (var i = 0; i < 4; i++) {
-		  		if (_controllerHandler.controllers[i].gamepad == gamepad) {
-		  			delete controller[i];
+		  	for (var i = 0; i < _controllerHandler.controller.length; i++) {
+		  		if (_controllerHandler.controller[i].gamepadIndex == gamepad.index) {
 		  			_controllerHandler.players--;
+		  			_controllerHandler.playerHandler.removePlayer(_controllerHandler.controller[i].player);
+		  			_controllerHandler.controller.splice(i,1);
 		  			return;
 		  		}
 		  	}
@@ -123,14 +115,30 @@ window.game.controllerHandler = function () {
 
 		  var j;
 
-		  for (j in _controllerHandler.controllers) {
-		    	var controller = _controllerHandler.controllers[j];
-		    	if (controller.poll()) {
-		    		_controllerHandler.buttonPressed();
+		  for (j in _controllerHandler.controller) {
+		    	var temp = _controllerHandler.controller[j];
+		    	if (temp == null) {
+		    		console.log("controller missing");
+		    	}
+		    	if (temp.poll()) {
+		    		_controllerHandler.buttonPressed(temp);
 		    	}
 		  }
 
-		  window.requestAnimationFrame(_controllerHandler.updateStatus);
+		  setTimeout(function(){ window.requestAnimationFrame(_controllerHandler.updateStatus); }, 1000/30); //caps framerate at 30fps preventing framerate drop in game
+		  
+		},
+
+		buttonPressed: function(t) { //0 is cross
+			_controllerHandler.anyControllerButtonPressed();
+			if (t.pressed[0] && _controllerHandler.controllers > _controllerHandler.playerHandler.players && (t.player == null)) {
+				_controllerHandler.playerHandler.addPlayer(t);
+				t.player = _controllerHandler.playerHandler.player[_controllerHandler.playerHandler.player.length-1];
+			}
+		},
+
+		anyControllerButtonPressed : function() {
+
 		},
 
 		scangamepads: function() {
@@ -139,9 +147,9 @@ window.game.controllerHandler = function () {
 		    if (gamepads[i]) {
 				var found = false;
 				for (var j = 0; j < 4; j++) {
-					if (_controllerHandler.controllers[j]) {
-						if (gamepads[i].index == _controllerHandler.controllers[j].gamepadIndex && !found) {
-							_controllerHandler.controllers[j].gamePad = gamepads[i];
+					if (_controllerHandler.controller[j]) {
+						if (gamepads[i].index == _controllerHandler.controller[j].gamepadIndex && !found) {
+							_controllerHandler.controller[j].gamePad = gamepads[i];
 							found = true;
 						}
 					}
@@ -153,9 +161,10 @@ window.game.controllerHandler = function () {
 		  }
 		}, 
 
-		init: function() {
+		init: function(ph) {
 			window.addEventListener("gamepadconnected", _controllerHandler.updateStatus);
 			window.addEventListener("gamepaddisconnected", _controllerHandler.disconnecthandler);
+			_controllerHandler.playerHandler = ph;
 		}
 	}
 	

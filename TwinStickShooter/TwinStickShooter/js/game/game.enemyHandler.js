@@ -49,8 +49,6 @@ class Enemy {
 		} );
 	};
 
-	
-
 
 	update = function() {
 
@@ -69,8 +67,6 @@ class Enemy {
 		}
 
 	};
-
-
 
 }
 
