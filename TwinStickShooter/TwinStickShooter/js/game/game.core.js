@@ -214,6 +214,7 @@ window.game.core = function () {
 			_events.onKeyDown = function () {
 				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
 					_ui.fadeOut("infoboxIntro");
+					_playerHandler.addPlayer();
 				}
 			};
 
