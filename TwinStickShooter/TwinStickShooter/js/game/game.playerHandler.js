@@ -113,8 +113,10 @@ class Player { //turn into class
 	}
 
 	rotateOnAxis(horizontal, vertical, cannon) {
+		if (horizontal == 0 && vertical == 0) return;
 		var polar = window.game.helpers.cartesianToPolar(horizontal,vertical);
 		cannon.setOnAxis(this.rigidBody, new CANNON.Vec3(0, 0, 1), polar.angle);
+		this.rigidBody.angularVelocity.z = 0;
 	}
 
 	processUserInput(cannon, controllerHandler) {
