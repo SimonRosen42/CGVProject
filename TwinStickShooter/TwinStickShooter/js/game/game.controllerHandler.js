@@ -6,6 +6,9 @@ class controller {
 		this.gamePad = gamepad;
 		this.player = null;
 		this.gamepadIndex = i;
+		this.pressed = {};
+		this.val = {};
+		this.axes = {};
 	}
 			// keyCodesPS4 = { 
 			// 	0: "cross",
@@ -34,17 +37,7 @@ class controller {
 			// 	3: "rightVertical"
 			// };
 
-			pressed = {
-				
-			};
-
-			val = {
-
-			};
-
-			axes = {
-
-			};
+			
 
 			poll = function() {
 				var flag = false;

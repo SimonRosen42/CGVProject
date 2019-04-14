@@ -43,10 +43,12 @@ window.game.cannon = function() {
 			// Get a reference to THREE.js to manage visuals
 			_three = three;
 		},
+		
 		destroy: function () {
 			// Remove all entities from the scene and Cannon's world
 			_cannon.removeAllVisuals();
 		},
+
 		setup: function () {
 			// Create a new physics simulation based on the default settings
 			_cannon.world = new CANNON.World();
@@ -59,6 +61,7 @@ window.game.cannon = function() {
 			_cannon.visuals = [];
 			_cannon.bodyCount = 0;
 		},
+
 		overrideCollisionMatrixSet: function() {
 			// Override CANNON's collisionMatrixSet for player's "isGrounded" via monkey patch
 			var _cannon_collisionMatrixSet = CANNON.World.prototype.collisionMatrixSet;
@@ -67,6 +70,7 @@ window.game.cannon = function() {
 				_cannon_collisionMatrixSet.call(this, i, j, [i, j], current);
 			};
 		},
+
 		getCollisions: function(index) {
 			// Count the collisions of the provided index that is connected to a rigid body in the Cannon.js world
 			var collisions = 0;
@@ -79,15 +83,18 @@ window.game.cannon = function() {
 
 			return collisions;
 		},
+
 		rotateOnAxis: function(rigidBody, axis, radians) {
 			// Equivalent to THREE's Object3D.rotateOnAxis
 			var rotationQuaternion = new CANNON.Quaternion();
 			rotationQuaternion.setFromAxisAngle(axis, radians);
 			rigidBody.quaternion = rotationQuaternion.mult(rigidBody.quaternion);
 		},
+
 		setOnAxis: function(rigidBody, axis, radians) {
 			rigidBody.quaternion.setFromAxisAngle(axis, radians);
 		},
+
 		createRigidBody: function(options) {
 			// Creates a new rigid body based on specific options
 			var rigidBody  = new CANNON.RigidBody(options.mass, options.shape, options.physicsMaterial);
@@ -103,6 +110,7 @@ window.game.cannon = function() {
 
 			return rigidBody;
 		},
+
 		createPhysicsMaterial: function(material, friction, restitution) {
 			// Create a new material and add a Cannon ContactMaterial to the world always using _cannon.playerPhysicsMaterial as basis
 			var physicsMaterial = material || new CANNON.Material();
@@ -112,6 +120,7 @@ window.game.cannon = function() {
 
 			return physicsMaterial;
 		},
+
 		addVisual: function(body, material, customMesh) {
 			// Initialize the mesh or use a provided custom mesh
 			var mesh = customMesh || null;
@@ -136,6 +145,7 @@ window.game.cannon = function() {
 
 			return mesh;
 		},
+
 		removeVisual: function(body){
 			// Remove an entity from the scene/world
 			if (body.visualref) {
