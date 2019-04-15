@@ -39,7 +39,7 @@ class controller {
 
 			
 
-			poll = function() {
+			poll() {
 				var flag = false;
 				for (var i = 0; i < this.gamePad.buttons.length; i++) {
 	      			var val = this.gamePad.buttons[i].value;

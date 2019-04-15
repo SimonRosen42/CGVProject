@@ -173,9 +173,9 @@ window.game.playerHandler = function () {
 
 		destroy: function() {
 			_playerHandler.players = 0;
-			var j;
-			for (j in _playerHandler.player) {
-				_playerHandler.player[j].destroy(_playerHandler.cannon);
+			var player;
+			for (player in _playerHandler.player) {
+				player.destroy(_playerHandler.cannon);
 			}
 			_playerHandler.player.splice(0,_playerHandler.player.length);
 		},
