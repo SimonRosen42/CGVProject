@@ -6,25 +6,19 @@ class Enemy {
 	// // static variables shared between each instance of this class
 	// static players = [];
 
-	constructor(players) {
+	constructor() {
 
-		this.enemy = new THREE.Object3D();
-
-		this.enemy.userData = {
-			mass : 3,
-			acceleration : 1,
-			speedMax : 30, // Enemy mass which affects other rigid bodies in the world
-		}
-		
+		this.collider = null;
+		this.mass = 3,
+		this.speed = 3,
+		this.speedMax = 30, // Enemy mass which affects other rigid bodies in the world
+		this.rigidBody = null;
 		// Enemy entity including mesh and rigid body
 		this.model = null; 
-
-		// reference to controllable players 
-		this.players = players;
 			
 		//enemy.rotation = rotation;
 		
-	};
+	}
 
 	create(cannon, three, position) {
 
@@ -32,26 +26,25 @@ class Enemy {
 
 		cannon.enemyPhysicsMaterial = cannon.createPhysicsMaterial(new CANNON.Material("enemyMaterial"), 0.0, 0.0);
 
-		enemy.collider = new CANNON.Cylinder(10, 10, 30, 32);
+		this.collider = new CANNON.Cylinder(10, 10, 30, 32);
 
-		enemy.rigidBody = new CANNON.RigidBody(enemy.mass, enemy.collider, window.game.core._cannon.enemyPhysicsMaterial);
-		enemy.rigidBody.position.set(position.x, position.y, position.z);
+		this.rigidBody = new CANNON.RigidBody(this.mass, this.collider, cannon.enemyPhysicsMaterial);
+		this.rigidBody.position.set(position.x, position.y, position.z);
 
 		//enemy.userData.model = window.game.core._three
-		enemy.mesh = cannon.addVisual(enemy.rigidBody, null, new THREE.mesh(new THREE.CylinderGeometry(10, 10, 30, 32), new THREE.MeshBasicMaterial({color : 0xff0000})));
+		this.mesh = cannon.addVisual(this.rigidBody, null, new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 30, 32), new THREE.MeshBasicMaterial({color : 0xff0000})));
 
-		enemy.rigidBody.addEventListener("collide", function(event) {
+		// this.rigidBody.addEventListener("collide", function(event) {
 
-		} );
+		// } );
 	}
 
 	destroy(cannon) {
 		cannon.removeVisual(this.rigidBody);
-		this.enemy = null;
 	}
 
 
-	update() {
+	update(playerHandler) {
 
 		// utility function to find the straight line distance between two points
 		// in a 3D space
@@ -62,16 +55,23 @@ class Enemy {
 		// find index of player that's closest to the enemy
 		var min = 10000000;
 		var minPlayerIndex = -1;
-		for (var i = 0; i < this.players.length; i++) {
-			var currDistance = getStraightLineDistance(this.enemy.rigidBody.position, this.players[i].rigidBody.position);
+		for (var i = 0; i < playerHandler.player.length; i++) {
+			var currDistance = getStraightLineDistance(this.rigidBody.position, playerHandler.player[i].rigidBody.position);
 			if (currDistance < min) {
 				min = currDistance;
 				minPlayerIndex = i;
 			}
 		}
-  
-		var closestPlayer = this.players[minPlayerIndex];
+		if (playerHandler.player[minPlayerIndex] != null) {
+		var closestPlayer = playerHandler.player[minPlayerIndex];
 		var closestPlayerPosition = closestPlayer.rigidBody.position;
+		var v = new CANNON.Vec3(closestPlayerPosition.x - this.rigidBody.position.x, closestPlayerPosition.y - this.rigidBody.position.y, 0);
+		console.log(v, this.rigidBody.position);
+		var magnitude = Math.sqrt(Math.pow(v.x,2)+Math.pow(v.y,2)+Math.pow(v.z,2));
+		var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
+		direction = new CANNON.Vec3(direction.x*this.speed,direction.y*this.speed,this.rigidBody.velocity.z);
+		this.rigidBody.velocity.set(direction.x,direction.y,this.rigidBody.velocity.z);
+		}
 
 		// TODO: use variables above to set the path for the enemy
 
@@ -87,6 +87,7 @@ window.game.enemyHandler = function() {
 		cannon: null,
 		three: null,
 		game: null,
+		playerHandler: null,
 		enemies: [],
 
 		addEnemy: function(position) {
@@ -108,13 +109,11 @@ window.game.enemyHandler = function() {
 			}
 		},
 
-		updateEnemies: function(players) {
+		updateEnemies: function() {
 
 			// update players (player coordinates may have changed)
-			this.players = players;
-
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
-				_enemyHandler.enemies[i].update();
+				_enemyHandler.enemies[i].update(_enemyHandler.playerHandler);
 			}
 		},
 
@@ -129,11 +128,11 @@ window.game.enemyHandler = function() {
 			_enemyHandler.numEnemies = 0;
 		},
 
-		init: function(c,t,g,ch) {
+		init: function(c,t,g,ph) {
 			_enemyHandler.cannon = c;
 			_enemyHandler.three = t;
 			_enemyHandler.game = g;
-			_enemyHandler.controllerHandler = ch;
+			_enemyHandler.playerHandler = ph;
 		}
 	}
 

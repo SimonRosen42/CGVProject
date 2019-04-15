@@ -145,7 +145,7 @@ window.game.core = function () {
 			_game.initComponents(options);
 			// Create player and level
 			_game.level.create();
-			_game.enemy.create();
+			//_game.enemy.create();
 			// Initiate the game loop
 			_game.loop();
 		},
@@ -159,6 +159,7 @@ window.game.core = function () {
 			_three.destroy();
 			_three.setup();
 			_playerHandler.destroy();
+			_enemyHandler.destroy();
 
 			// Recreate player and level objects by using initial values which were copied at the first start
 			//_game.player = window.game.helpers.cloneObject(_gameDefaults.player);
@@ -178,6 +179,7 @@ window.game.core = function () {
 			_cannon.updatePhysics();
 			_playerHandler.updatePlayers();
 			_game.enemy.update();
+			_enemyHandler.updateEnemies();
 			// Render visual scene
 			_three.render();
 		},
@@ -208,7 +210,9 @@ window.game.core = function () {
 			_ui.init();
 			_events.init();
 			_controllerHandler.init(_playerHandler);
-			_playerHandler.init(_cannon,_three,_game,_controllerHandler);
+			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui);
+			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
+			_enemyHandler.addEnemy(new THREE.Vector3(200,200,100));
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {

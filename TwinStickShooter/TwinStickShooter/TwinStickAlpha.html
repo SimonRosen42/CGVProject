@@ -27,16 +27,36 @@
 				box-sizing:border-box;
 			}
 
+			.playerUINotVisible {
+				opacity:0;
+			}
+
+			.playerUIclass {
+				width:100px;
+				height:200px;
+			}
+
+			.playerUI1class {
+				position: fixed;
+				top:10%;
+				left:20%;
+			}
+
 			.fade-out {
 				opacity:0;
 				transition:opacity 2000ms;
 				-webkit-transition:opacity 2000ms;
 			}
+
 		</style>
 	</head>
 
 	<body>
 		<div id="game"></div>
+
+		<div id="playerUI1" class="playerUINotVisible playerUI1class playerUIclass">
+			<h1 id="Player1Name">Player1</h1>
+		</div>
 
 		<div id="infobox-intro" class="infobox">
 			<h2>Welcome to the alpha of the twinstick shooter</h2>

@@ -142,6 +142,7 @@ window.game.playerHandler = function () {
 		three: null,
 		game: null,
 		controllerHandler: null,
+		ui: null,
 
 		player: [],
 
@@ -180,13 +181,14 @@ window.game.playerHandler = function () {
 			_playerHandler.player.splice(0,_playerHandler.player.length);
 		},
 
-		init: function(c,t,g,ch) {
+		init: function(c,t,g,ch,ui) {
 			_playerHandler.cannon = c;
 			_playerHandler.three = t;
 			_playerHandler.game = g;
 			_playerHandler.controllerHandler = ch;
 			// Create a global physics material for the player which will be used as ContactMaterial for all other objects in the level
 			_playerHandler.cannon.playerPhysicsMaterial = new CANNON.Material("playerMaterial");
+			_playerHandler.ui = ui;
 		}
 
 	}
