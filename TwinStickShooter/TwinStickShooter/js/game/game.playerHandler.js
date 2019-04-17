@@ -69,6 +69,8 @@ class Player { //turn into class
 		this.rigidBody = new CANNON.RigidBody(this.mass, this.shape, cannon.createPhysicsMaterial(cannon.playerPhysicsMaterial));
 		this.rigidBody.position.set(0, 0, 50);
 		this.mesh = cannon.addVisual(this.rigidBody, null, this.model.mesh);
+		this.mesh.castShadow = true;
+		this.mesh.receiveShadow = true;
 		// Create a HingeConstraint to limit player's air-twisting - this needs improvement
 		this.orientationConstraint = new CANNON.HingeConstraint(this.rigidBody, new CANNON.Vec3(0, 0, 0), new CANNON.Vec3(0, 0, 1), this.rigidBody, new CANNON.Vec3(0, 0, 1), new CANNON.Vec3(0, 0, 1));
 		cannon.world.addConstraint(this.orientationConstraint);

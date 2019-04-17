@@ -193,17 +193,6 @@ window.game.core = function () {
 			_enemyHandler = window.game.enemyHandler();
 			_playerHandler = window.game.playerHandler();
 
-			// Setup lights for THREE.js
-			_three.setupLights = function () {
-				var hemiLight = new THREE.HemisphereLight(window.game.static.colors.white, window.game.static.colors.white, 0.6);
-				hemiLight.position.set(0, 0, -1);
-				_three.scene.add(hemiLight);
-
-				var pointLight = new THREE.PointLight(window.game.static.colors.white, 0.5);
-				pointLight.position.set(0, 0, 500);
-				_three.scene.add(pointLight);
-			};
-
 			// Initialize components with options
 			_three.init(options);
 			_cannon.init(_three);

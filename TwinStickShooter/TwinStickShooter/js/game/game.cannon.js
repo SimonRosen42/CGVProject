@@ -8,8 +8,6 @@ window.game = window.game || {};
 
 window.game.cannon = function() {
 	var _cannon = {
-		// Attributes
-
 		// Cannon.js world holding all rigid bodies of the level
 		world: null,
 		// Bodies correspond to the physical objects inside the Cannon.js world
@@ -24,10 +22,10 @@ window.game.cannon = function() {
 		// Default Z gravity (approximation of 9,806)
 		gravity: -10,
 		// Interval speed for Cannon.js to step the physics simulation
-		timestep: 1 / 8,
+		timestep: 1 / 16,
 		// Player physics material that will be assigned in game.core.js
 		playerPhysicsMaterial: null,
-		// Enemy physics material
+		// Enemy physics material that will be assigned in game.core.js
 		enemyPhysicsMaterial: null,
 		// Solid material for all other level objects
 		solidMaterial: null,
@@ -43,7 +41,7 @@ window.game.cannon = function() {
 			// Get a reference to THREE.js to manage visuals
 			_three = three;
 		},
-		
+
 		destroy: function () {
 			// Remove all entities from the scene and Cannon's world
 			_cannon.removeAllVisuals();
@@ -92,6 +90,7 @@ window.game.cannon = function() {
 		},
 
 		setOnAxis: function(rigidBody, axis, radians) {
+			//set rotation of object from radians
 			rigidBody.quaternion.setFromAxisAngle(axis, radians);
 		},
 
@@ -285,97 +284,6 @@ window.game.cannon = function() {
 			}
 
 			return mesh;
-		},
-		showAABBs: function() {
-			// Show axis-aligned bounding boxes for debugging purposes - Cannon.js uses bounding spheres by default for its collision detection
-			var that = this;
-
-			var GeometryCache = function(createFunc) {
-				var that = this, geo = null, geometries = [], gone = [];
-
-				that.request = function() {
-					if (geometries.length) {
-						geo = geometries.pop();
-					} else {
-						geo = createFunc();
-					}
-
-					_three.scene.add(geo);
-					gone.push(geo);
-
-					return geo;
-				};
-
-				that.restart = function() {
-					while(gone.length) {
-						geometries.push(gone.pop());
-					}
-				};
-
-				that.hideCached = function() {
-					for (var i = 0; i < geometries.length; i++) {
-						_three.scene.remove(geometries[i]);
-					}
-				}
-			};
-
-			var bboxGeometry = new THREE.CubeGeometry(1, 1, 1);
-
-			var bboxMaterial = new THREE.MeshBasicMaterial({
-				color: 0xffffff,
-				wireframe: true
-			});
-
-			var bboxMeshCache = new GeometryCache(function() {
-				return new THREE.Mesh(bboxGeometry, bboxMaterial);
-			});
-
-			that.update = function() {
-				bboxMeshCache.restart();
-
-				for (var i = 0; i < _cannon.bodies.length; i++) {
-					var b = _cannon.bodies[i];
-
-					if (b.computeAABB) {
-						if(b.aabbNeedsUpdate){
-							b.computeAABB();
-						}
-
-						if (isFinite(b.aabbmax.x) &&
-							isFinite(b.aabbmax.y) &&
-							isFinite(b.aabbmax.z) &&
-							isFinite(b.aabbmin.x) &&
-							isFinite(b.aabbmin.y) &&
-							isFinite(b.aabbmin.z) &&
-							b.aabbmax.x - b.aabbmin.x != 0 &&
-							b.aabbmax.y - b.aabbmin.y != 0 &&
-							b.aabbmax.z - b.aabbmin.z != 0) {
-							var mesh = bboxMeshCache.request();
-
-							mesh.scale.set(b.aabbmax.x - b.aabbmin.x,
-									b.aabbmax.y - b.aabbmin.y,
-									b.aabbmax.z - b.aabbmin.z);
-
-							mesh.position.set((b.aabbmax.x + b.aabbmin.x) * 0.5,
-									(b.aabbmax.y + b.aabbmin.y) * 0.5,
-									(b.aabbmax.z + b.aabbmin.z) * 0.5);
-						}
-					}
-				}
-
-				bboxMeshCache.hideCached();
-			};
-			
-			that.init = function() {
-				var updatePhysics = _cannon.updatePhysics;
-
-				_cannon.updatePhysics = function() {
-					updatePhysics();
-					that.update();
-				}
-			};
-
-			return that;
 		}
 	};
 

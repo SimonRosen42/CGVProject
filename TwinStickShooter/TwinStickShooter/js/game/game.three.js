@@ -8,56 +8,61 @@ window.game = window.game || {};
 
 window.game.three = function() {
 	var _three = {
-		// Attributes
-
-		// DOM container which will hold the final canvas element of THREE.js
-		domContainer: null,
-		// Camera size constraint to limit viewport e.g. for a user interface
-		cameraSizeConstraint: null,
+		// container which will hold the final canvas element of THREE.js
+		container: null,
 		// Scene, camera and renderer
 		camera: null,
 		scene: null,
 		renderer: null,
-		// Field of view default setting for the camera
+		//default field of view setting for the camera
 		fov: 45,
+		//default near setting for camera
+		near: 1,
+		//default far setting for camera
+		far: 15000,
 
 		// Methods
 		init: function(options) {
-			// Initialize the DOM container from the options or create a new one
-			_three.domContainer = options && options.domContainer || document.createElement("div");
-			// Set camera size
-			_three.cameraSizeConstraint = {
-				width: options && options.cameraSizeConstraint && options.cameraSizeConstraint.width || 0,
-				height: options && options.cameraSizeConstraint && options.cameraSizeConstraint.height || 0
-			};
+			// Initialize the container from the options
+			_three.container = options.container;
 
-			// Append new DOM container if needed
-			if (!options || !options.domContainer) {
-				document.body.appendChild(_three.domContainer);
+			if (options.fov) { //if fov is in options change default camera fov rendering distance
+				_three.fov = options.fov;
+			}
+			if (options.near) { //if near is in options change default camera near rendering distance
+				_three.near = options.near;
+			}
+			if (options.far) { //if far is in options change default camera far rendering distance
+				_three.far = options.far;
 			}
 
-			// Basic scene and lights setup
+			// Basic scene setup
 			_three.setup();
 
-			// Create the main perspective camera using default fov and camera size constraints
-			_three.camera = new THREE.PerspectiveCamera(_three.fov, (window.innerWidth - _three.cameraSizeConstraint.width) / (window.innerHeight - _three.cameraSizeConstraint.height), 1, 15000);
-			// Set the up vector to the Z axis so everything is aligned to the Cannon.js coordinate system
+			// Create the main perspective camera using fov, near and far
+			_three.camera = new THREE.PerspectiveCamera(_three.fov, window.innerWidth / window.innerHeight, _three.near, _three.far);
+			// Set the up vector to the Z axis, necessary as cannon uses Z as up vector
 			_three.camera.up.set(0, 0, 1);
 
-			// Define default WebGL renderer
+			// Define default WebGL renderer with anti-aliasing and shadows
 			_three.renderer = new THREE.WebGLRenderer({ antialias: true });
+			//_three.renderer.shadowMapEnabled = true;
+			//_three.renderer.shadowMapType = THREE.PCFSoftShadowMap;
 
-			// Set the background color (HTML background will be used if this option is omitted)
-			if (options && typeof options.rendererClearColor === "number") {
-				_three.renderer.setClearColor(options.rendererClearColor, 1);
+			_three.setupLights();
+
+			// Set the background color for rendering
+			if (options.clearColour) {
+				_three.renderer.setClearColor(options.clearColour, 1);
 			}
 
-			// Add window resize listener to keep screen size for the canvas
+			// Add window resize listener to keep screen size for the canvas, and not resize screen size
 			_three.onWindowResize();
 			window.addEventListener("resize", _three.onWindowResize, false);
 
-			// Append the canvas element
-			_three.domContainer.appendChild(_three.renderer.domElement);
+			// Append the canvas element to the container
+			_three.container.appendChild(_three.renderer.domElement);
+
 		},
 		destroy: function() {
 
@@ -65,11 +70,16 @@ window.game.three = function() {
 		setup: function () {
 			// Setup main scene
 			_three.scene = new THREE.Scene();
+		},
+		setupLights: function() {
+			var hemiLight = new THREE.HemisphereLight(window.game.static.colors.white, window.game.static.colors.white, 0.6);
+				hemiLight.position.set(0, 0, -1);
+				_three.scene.add(hemiLight);
 
-			// Call lights setup method defined in game.core.js if existing
-			if (_three.setupLights) {
-				_three.setupLights();
-			}
+				// var spotLight = new THREE.SpotLight(window.game.static.colors.white);
+				// spotLight.position.set(0, 0, 500);
+				// spotLight.castShadow = true;
+				// _three.scene.add(spotLight);
 		},
 		render: function() {
 			// Update the scene
@@ -77,9 +87,9 @@ window.game.three = function() {
 		},
 		onWindowResize: function() {
 			// Keep screen size when window resizes
-			_three.camera.aspect = (window.innerWidth - _three.cameraSizeConstraint.width) / (window.innerHeight - _three.cameraSizeConstraint.height);
+			_three.camera.aspect = window.innerWidth / window.innerHeight;
 			_three.camera.updateProjectionMatrix();
-			_three.renderer.setSize((window.innerWidth - _three.cameraSizeConstraint.width), (window.innerHeight - _three.cameraSizeConstraint.height));
+			_three.renderer.setSize(window.innerWidth, window.innerHeight);
 		},
 		createModel: function(jsonData, scale, materials, isGeometry) {
 			// Variables for JSONLoader and imported model data
@@ -105,18 +115,18 @@ window.game.three = function() {
 			// Check if materials is set
 			if (materials) {
 				// If materials is an array, assign each material to the corresponding imported material
-				if (typeof materials === "object" && materials.length) {
-					// Iterate through the imported materials and
+				if (materials.length) {
+					// Iterate through the imported materials and assing from material array if array
 					if (jsonModel.materials) {
 						for (var i = 0; i < jsonModel.materials.length; i++) {
 							jsonModel.materials[i] = materials[i];
 						}
 
-						// Create a multi-face material
+						// Create a multi-face material if array bigger than 0
 						meshMaterial = new THREE.MeshFaceMaterial(jsonModel.materials);
 					}
 				} else {
-					// Use and assign the defined material directly
+					// Use and assign the defined material directly if not array
 					meshMaterial = materials;
 				}
 			} else {
@@ -133,18 +143,13 @@ window.game.three = function() {
 			return model;
 		},
 		createCannonGeometry: function(geometry, scale) {
-			// Preparre translation properties
-			var translateX;
-			var translateY;
-			var translateZ;
-
 			// Get the bounding box for the provided geometry
 			geometry.computeBoundingBox();
 
 			// Center the imported model so the axis-aligned bounding boxes (AABB) and bounding spheres are generated correctly by Cannon.js
-			translateX = -((geometry.boundingBox.size().x / 2) + geometry.boundingBox.min.x);
-			translateY = -((geometry.boundingBox.size().y / 2) + geometry.boundingBox.min.y);
-			translateZ = -((geometry.boundingBox.size().z / 2) + geometry.boundingBox.min.z);
+			var translateX = -((geometry.boundingBox.size().x / 2) + geometry.boundingBox.min.x);
+			var translateY = -((geometry.boundingBox.size().y / 2) + geometry.boundingBox.min.y);
+			var translateZ = -((geometry.boundingBox.size().z / 2) + geometry.boundingBox.min.z);
 
 			// Apply various matrix transformations to translate, rotate and scale the imported model for the Cannon.js coordinate system
 			geometry.applyMatrix(new THREE.Matrix4().makeTranslation(translateX, translateY, translateZ));
@@ -152,7 +157,7 @@ window.game.three = function() {
 			geometry.applyMatrix(new THREE.Matrix4().makeScale(scale, scale, scale));
 		},
 		createCannonHalfExtents: function(geometry) {
-			// The final bounding box also exsists so get its dimensions
+			// The final bounding box also exists so get its dimensions
 			geometry.computeBoundingBox();
 
 			// Return a Cannon vector to define the halfExtents

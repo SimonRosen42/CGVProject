@@ -63,14 +63,13 @@ class Enemy {
 			}
 		}
 		if (playerHandler.player[minPlayerIndex] != null) {
-		var closestPlayer = playerHandler.player[minPlayerIndex];
-		var closestPlayerPosition = closestPlayer.rigidBody.position;
-		var v = new CANNON.Vec3(closestPlayerPosition.x - this.rigidBody.position.x, closestPlayerPosition.y - this.rigidBody.position.y, 0);
-		console.log(v, this.rigidBody.position);
-		var magnitude = Math.sqrt(Math.pow(v.x,2)+Math.pow(v.y,2)+Math.pow(v.z,2));
-		var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
-		direction = new CANNON.Vec3(direction.x*this.speed,direction.y*this.speed,this.rigidBody.velocity.z);
-		this.rigidBody.velocity.set(direction.x,direction.y,this.rigidBody.velocity.z);
+			var closestPlayer = playerHandler.player[minPlayerIndex];
+			var closestPlayerPosition = closestPlayer.rigidBody.position;
+			var v = new CANNON.Vec3(closestPlayerPosition.x - this.rigidBody.position.x, closestPlayerPosition.y - this.rigidBody.position.y, 0);
+			var magnitude = Math.sqrt(Math.pow(v.x,2)+Math.pow(v.y,2)+Math.pow(v.z,2));
+			var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
+			direction = new CANNON.Vec3(direction.x*this.speed,direction.y*this.speed,this.rigidBody.velocity.z);
+			this.rigidBody.velocity.set(direction.x,direction.y,this.rigidBody.velocity.z);
 		}
 
 		// TODO: use variables above to set the path for the enemy

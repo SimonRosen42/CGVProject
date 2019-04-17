@@ -13,7 +13,7 @@ window.game.levelHandler = function () {
 
 		var geometry = new THREE.BufferGeometry();
 
-		var vertices = new Float32Array ( [
+		var vertices = new Float32Array ([
 
 					-floorSize/2, -floorSize/2, 0.0,
 					floorSize/2, -floorSize/2, 0.0,

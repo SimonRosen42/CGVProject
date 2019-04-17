@@ -16,6 +16,9 @@ window.game.static = {
 	},
 
 	playerNames: {	
-		Wesley: "Wesley"
+		Wesley: "Wesley",
+		Zaeem: "Zaeem",
+		Simon: "Simon",
+		Phillip: "Phillip"
 	}
 };
