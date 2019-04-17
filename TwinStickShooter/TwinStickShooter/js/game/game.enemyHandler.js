@@ -12,10 +12,10 @@ class Enemy {
 		this.mass = 3,
 		this.speed = 3,
 		this.speedMax = 30, // Enemy mass which affects other rigid bodies in the world
-		this.rigidBody = null;
+		this.body = null;
 		// Enemy entity including mesh and rigid body
 		this.model = null; 
-			
+		this.shape = null;
 		//enemy.rotation = rotation;
 		
 	}
@@ -28,13 +28,15 @@ class Enemy {
 
 		this.collider = new CANNON.Cylinder(10, 10, 30, 32);
 
-		this.rigidBody = new CANNON.RigidBody(this.mass, this.collider, cannon.enemyPhysicsMaterial);
-		this.rigidBody.position.set(position.x, position.y, position.z);
+		this.body = new CANNON.Body(this.mass, this.collider, cannon.enemyPhysicsMaterial);
+		this.body.position.set(position.x, position.y, position.z);
+		this.shape = new CANNON.Sphere(1);
+		this.body.addShape(this.shape);
 
 		//enemy.userData.model = window.game.core._three
-		this.mesh = cannon.addVisual(this.rigidBody, null, new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 30, 32), new THREE.MeshBasicMaterial({color : 0xff0000})));
+		this.mesh = cannon.addVisual(this.body, new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 30, 32), new THREE.MeshBasicMaterial({color : 0xff0000})));
 
-		// this.rigidBody.addEventListener("collide", function(event) {
+		// this.body.addEventListener("collide", function(event) {
 
 		// } );
 	}

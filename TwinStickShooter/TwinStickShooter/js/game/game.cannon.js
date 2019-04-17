@@ -33,7 +33,7 @@ window.game.cannon = function() {
 		// Methods
 		init: function(three) {
 			// A small collision detection extension to get the indices of the collision pair
-			_cannon.overrideCollisionMatrixSet();
+			//_cannon.overrideCollisionMatrixSet();
 
 			// Setup Cannon.js world
 			_cannon.setup();
@@ -60,14 +60,14 @@ window.game.cannon = function() {
 			_cannon.bodyCount = 0;
 		},
 
-		overrideCollisionMatrixSet: function() {
-			// Override CANNON's collisionMatrixSet for player's "isGrounded" via monkey patch
-			var _cannon_collisionMatrixSet = CANNON.World.prototype.collisionMatrixSet;
-
-			CANNON.World.prototype.collisionMatrixSet = function(i, j, value, current){
-				_cannon_collisionMatrixSet.call(this, i, j, [i, j], current);
-			};
-		},
+		//overrideCollisionMatrixSet: function() {
+		//	// Override CANNON's collisionMatrixSet for player's "isGrounded" via monkey patch
+		//	var _cannon_collisionMatrixSet = CANNON.World.prototype.collisionMatrixSet;
+//
+		//	CANNON.World.prototype.collisionMatrixSet = function(i, j, value, current){
+		//		_cannon_collisionMatrixSet.call(this, i, j, [i, j], current);
+		//	};
+		//},
 
 		getCollisions: function(index) {
 			// Count the collisions of the provided index that is connected to a rigid body in the Cannon.js world
@@ -82,32 +82,34 @@ window.game.cannon = function() {
 			return collisions;
 		},
 
-		rotateOnAxis: function(rigidBody, axis, radians) {
+		rotateOnAxis: function(body, axis, radians) {
 			// Equivalent to THREE's Object3D.rotateOnAxis
 			var rotationQuaternion = new CANNON.Quaternion();
 			rotationQuaternion.setFromAxisAngle(axis, radians);
-			rigidBody.quaternion = rotationQuaternion.mult(rigidBody.quaternion);
+			body.quaternion = rotationQuaternion.mult(body.quaternion);
 		},
 
-		setOnAxis: function(rigidBody, axis, radians) {
+		setOnAxis: function(body, axis, radians) {
 			//set rotation of object from radians
-			rigidBody.quaternion.setFromAxisAngle(axis, radians);
+			body.quaternion.setFromAxisAngle(axis, radians);
 		},
 
-		createRigidBody: function(options) {
+		createBody: function(options) {
 			// Creates a new rigid body based on specific options
-			var rigidBody  = new CANNON.RigidBody(options.mass, options.shape, options.physicsMaterial);
-			rigidBody.position.set(options.position.x, options.position.y, options.position.z);
+			var body  = new CANNON.Body({mass: options.mass/*, material: options.physicsMaterial */});
+			body.addShape(options.shape);
+			body.position.set(options.position.x, options.position.y, options.position.z);
 
 			// Apply a rotation if set by using Quaternions
 			if (options.rotation) {
-				rigidBody.quaternion.setFromAxisAngle(options.rotation[0], options.rotation[1]);
+				body.quaternion.setFromAxisAngle(options.rotation[0], options.rotation[1]);
 			}
 
 			// Add the entity to the scene and world
-			_cannon.addVisual(rigidBody, options.meshMaterial, options.customMesh);
-
-			return rigidBody;
+			var mesh = new THREE.Mesh(options.geometry, options.meshMaterial);
+			_cannon.addVisual(body, mesh);
+			console.log(body, mesh);
+			return body;
 		},
 
 		createPhysicsMaterial: function(material, friction, restitution) {
@@ -120,29 +122,16 @@ window.game.cannon = function() {
 			return physicsMaterial;
 		},
 
-		addVisual: function(body, material, customMesh) {
-			// Initialize the mesh or use a provided custom mesh
-			var mesh = customMesh || null;
-
-			// Check for rigid body and convert the shape to a THREE.js mesh representation
-			if (body instanceof CANNON.RigidBody && !mesh) {
-				mesh = _cannon.shape2mesh(body.shape, material);
-			}
-
+		addVisual: function(body, mesh) {
 			// Populate the bodies and visuals arrays
 			if (mesh) {
 				_cannon.bodies.push(body);
 				_cannon.visuals.push(mesh);
 
-				body.visualref = mesh;
-				body.visualref.visualId = _cannon.bodies.length - 1;
-
 				// Add body/mesh to scene/world
 				_three.scene.add(mesh);
 				_cannon.world.add(body);
 			}
-
-			return mesh;
 		},
 
 		removeVisual: function(body){
@@ -207,84 +196,83 @@ window.game.cannon = function() {
 
 			// Perform a simulation step
 			_cannon.world.step(_cannon.timestep);
-		},
-		shape2mesh: function(shape, currentMaterial) {
-			// Convert a given shape to a THREE.js mesh
-			var mesh;
-			var submesh;
-
-			switch (shape.type){
-				case CANNON.Shape.types.SPHERE:
-					var sphere_geometry = new THREE.SphereGeometry(shape.radius, shape.wSeg, shape.hSeg);
-					mesh = new THREE.Mesh(sphere_geometry, currentMaterial);
-					break;
-
-				case CANNON.Shape.types.PLANE:
-					var geometry = new THREE.PlaneGeometry(100, 100);
-					mesh = new THREE.Object3D();
-					submesh = new THREE.Object3D();
-					var ground = new THREE.Mesh(geometry, currentMaterial);
-					ground.scale = new THREE.Vector3(1000, 1000, 1000);
-					submesh.add(ground);
-
-					ground.castShadow = true;
-					ground.receiveShadow = true;
-
-					mesh.add(submesh);
-					break;
-
-				case CANNON.Shape.types.BOX:
-					var box_geometry = new THREE.CubeGeometry(shape.halfExtents.x * 2,
-							shape.halfExtents.y * 2,
-							shape.halfExtents.z * 2);
-					mesh = new THREE.Mesh(box_geometry, currentMaterial);
-					mesh.castShadow = true;
-					mesh.receiveShadow = true;
-					break;
-
-				case CANNON.Shape.types.COMPOUND:
-					// recursive compounds
-					var o3d = new THREE.Object3D();
-					for(var i = 0; i<shape.childShapes.length; i++){
-
-						// Get child information
-						var subshape = shape.childShapes[i];
-						var o = shape.childOffsets[i];
-						var q = shape.childOrientations[i];
-
-						submesh = _cannon.shape2mesh(subshape);
-						submesh.position.set(o.x,o.y,o.z);
-						submesh.quaternion.set(q.x,q.y,q.z,q.w);
-
-						submesh.useQuaternion = true;
-						o3d.add(submesh);
-						mesh = o3d;
-					}
-					break;
-
-				default:
-					throw "Visual type not recognized: " + shape.type;
-			}
-
-			mesh.receiveShadow = true;
-			mesh.castShadow = true;
-
-			if (mesh.children) {
-				for (var i = 0; i < mesh.children.length; i++) {
-					mesh.children[i].castShadow = true;
-					mesh.children[i].receiveShadow = true;
-
-					if (mesh.children[i]){
-						for(var j = 0; j < mesh.children[i].length; j++) {
-							mesh.children[i].children[j].castShadow = true;
-							mesh.children[i].children[j].receiveShadow = true;
-						}
-					}
-				}
-			}
-
-			return mesh;
 		}
+		// shape2mesh: function(shape, currentMaterial) {
+		// 	// Convert a given shape to a THREE.js mesh
+		// 	var mesh;
+		// 	var submesh;
+		// 	switch (shape.type){
+		// 		case CANNON.Shape.types.SPHERE:
+		// 			var sphere_geometry = new THREE.SphereGeometry(shape.radius, shape.wSeg, shape.hSeg);
+		// 			mesh = new THREE.Mesh(sphere_geometry, currentMaterial);
+		// 			break;
+
+		// 		case CANNON.Shape.types.PLANE:
+		// 			var geometry = new THREE.PlaneGeometry(100, 100);
+		// 			mesh = new THREE.Object3D();
+		// 			submesh = new THREE.Object3D();
+		// 			var ground = new THREE.Mesh(geometry, currentMaterial);
+		// 			ground.scale = new THREE.Vector3(1000, 1000, 1000);
+		// 			submesh.add(ground);
+
+		// 			ground.castShadow = true;
+		// 			ground.receiveShadow = true;
+
+		// 			mesh.add(submesh);
+		// 			break;
+
+		// 		case CANNON.Shape.types.BOX:
+		// 			var box_geometry = new THREE.CubeGeometry(shape.halfExtents.x * 2,
+		// 					shape.halfExtents.y * 2,
+		// 					shape.halfExtents.z * 2);
+		// 			mesh = new THREE.Mesh(box_geometry, currentMaterial);
+		// 			mesh.castShadow = true;
+		// 			mesh.receiveShadow = true;
+		// 			break;
+
+		// 		case CANNON.Shape.types.COMPOUND:
+		// 			// recursive compounds
+		// 			var o3d = new THREE.Object3D();
+		// 			for(var i = 0; i<shape.childShapes.length; i++){
+
+		// 				// Get child information
+		// 				var subshape = shape.childShapes[i];
+		// 				var o = shape.childOffsets[i];
+		// 				var q = shape.childOrientations[i];
+
+		// 				submesh = _cannon.shape2mesh(subshape);
+		// 				submesh.position.set(o.x,o.y,o.z);
+		// 				submesh.quaternion.set(q.x,q.y,q.z,q.w);
+
+		// 				submesh.useQuaternion = true;
+		// 				o3d.add(submesh);
+		// 				mesh = o3d;
+		// 			}
+		// 			break;
+
+		// 		default:
+		// 			throw "Visual type not recognized: " + shape.type;
+		// 	}
+
+		// 	mesh.receiveShadow = true;
+		// 	mesh.castShadow = true;
+
+		// 	if (mesh.children) {
+		// 		for (var i = 0; i < mesh.children.length; i++) {
+		// 			mesh.children[i].castShadow = true;
+		// 			mesh.children[i].receiveShadow = true;
+
+		// 			if (mesh.children[i]){
+		// 				for(var j = 0; j < mesh.children[i].length; j++) {
+		// 					mesh.children[i].children[j].castShadow = true;
+		// 					mesh.children[i].children[j].receiveShadow = true;
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+
+		// 	return mesh;
+		// }
 	};
 
 	var _three;

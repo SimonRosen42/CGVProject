@@ -6,7 +6,7 @@ class Player { //turn into class
 		this.model = null;
 		this.mesh = null;
 		this.shape = null;
-		this.rigidBody = null;
+		this.body = null;
 		// Player mass which affects other rigid bodies in the world
 		this.mass = 3;
 		// HingeConstraint to limit player's air-twisting
@@ -60,24 +60,26 @@ class Player { //turn into class
 		// Methods
 	create(cannon, three) {
 		// Create a player character based on an imported 3D model that was already loaded as JSON into game.models.player
-		this.model = three.createModel(window.game.models.player, 12, [
-			new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
-			new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
-		]);
+		//this.model = three.createModel(window.game.models.player, 12, [
+		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
+		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
+		//]);
+		this.model = new THREE.SphereGeometry(5,32,32);
 		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
-		this.shape = new CANNON.Box(this.model.halfExtents);
-		this.rigidBody = new CANNON.RigidBody(this.mass, this.shape, cannon.createPhysicsMaterial(cannon.playerPhysicsMaterial));
-		this.rigidBody.position.set(0, 0, 50);
-		this.mesh = cannon.addVisual(this.rigidBody, null, this.model.mesh);
-		this.mesh.castShadow = true;
-		this.mesh.receiveShadow = true;
+		this.shape = new CANNON.Sphere(5);
+		this.body = new CANNON.Body({mass:this.mass, shape:this.shape, material:cannon.createPhysicsMaterial(cannon.playerPhysicsMaterial)});
+		this.body.position.set(0, 0, 50);
+		this.mesh = new THREE.Mesh (this.model, new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}))
+		cannon.addVisual(this.body, this.mesh);
+		//this.mesh.castShadow = true;
+		//this.mesh.receiveShadow = true;
 		// Create a HingeConstraint to limit player's air-twisting - this needs improvement
-		this.orientationConstraint = new CANNON.HingeConstraint(this.rigidBody, new CANNON.Vec3(0, 0, 0), new CANNON.Vec3(0, 0, 1), this.rigidBody, new CANNON.Vec3(0, 0, 1), new CANNON.Vec3(0, 0, 1));
-		cannon.world.addConstraint(this.orientationConstraint);
-		// this.rigidBody.postStep = function() { //function to run after rigidbody equations
+		//this.orientationConstraint = new CANNON.HingeConstraint(this.body, new CANNON.Vec3(0, 0, 0), [new CANNON.Vec3(0, 0, 1), this.body, new CANNON.Vec3(0, 0, 1), new CANNON.Vec3(0, 0, 1)]);
+		//cannon.world.addConstraint(this.orientationConstraint);
+		// this.body.postStep = function() { //function to run after body equations
 		// };
 		// Collision event listener for the jump mechanism
-		// this.rigidBody.addEventListener("collide", function(event) {
+		// this.body.addEventListener("collide", function(event) {
 		// 	// Checks if player's is on ground
 		// 	if (!this.isGrounded) {
 		// 		 Ray intersection test to check if player is colliding with an object beneath him
@@ -87,7 +89,7 @@ class Player { //turn into class
 	}
 
 	destroy(cannon) {
-		cannon.removeVisual(this.rigidBody);
+		cannon.removeVisual(this.body);
 		this.controller.player = null;
 	}
 
@@ -111,14 +113,14 @@ class Player { //turn into class
 	}
 
 	moveWithAxis(horizontal, vertical) {
-		this.rigidBody.velocity.set(horizontal * this.speed, vertical * this.speed, this.rigidBody.velocity.z);
+		this.body.velocity.set(horizontal * this.speed, vertical * this.speed, this.body.velocity.z);
 	}
 
 	rotateOnAxis(horizontal, vertical, cannon) {
-		this.rigidBody.angularVelocity.z = 0;
+		this.body.angularVelocity.z = 0;
 		if (horizontal == 0 && vertical == 0) return;
 		var polar = window.game.helpers.cartesianToPolar(horizontal,vertical);
-		cannon.setOnAxis(this.rigidBody, new CANNON.Vec3(0, 0, 1), polar.angle);
+		cannon.setOnAxis(this.body, new CANNON.Vec3(0, 0, 1), polar.angle);
 	}
 
 	processUserInput(cannon, controllerHandler) {

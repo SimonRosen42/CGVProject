@@ -93,7 +93,7 @@ window.game.three = function() {
 				jsonModel = jsonData;
 			} else {
 				// Regular model loading of JSON data that exists e.g. in game.models.js
-				loader = new THREE.JSONLoader();
+				loader = new THREE.GLTFloader();
 				jsonModel = loader.parse(JSON.parse(JSON.stringify(jsonData)));
 			}
 

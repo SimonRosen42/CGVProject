@@ -51,91 +51,97 @@ window.game.core = function () {
 				// Define floor settings
 				var floorSize = 800;
 				var floorHeight = 20;
-
+				var halfExtents = new CANNON.Vec3(800,800,20);
+                var boxShape = new CANNON.Box(halfExtents);
+                var material = new THREE.MeshLambertMaterial( { color: 0xdddddd } );
+                var boxGeometry = new THREE.BoxGeometry(halfExtents.x*2,halfExtents.y*2,halfExtents.z*2);
+				_three.scene.add(new THREE.Mesh(boxGeometry, material));
+				console.log(_three.scene);
 				// Add a floor
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(floorSize, floorSize, floorHeight)),
-					mass: 0,
-					position: new CANNON.Vec3(0, 0, -floorHeight),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.black }),
-					physicsMaterial: _cannon.solidMaterial
-				});
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(floorSize, floorSize, floorHeight)),
+				//	mass: 0,
+				//	position: new CANNON.Vec3(0, 0, -floorHeight),
+				//	geometry: new THREE.BoxGeometry(floorSize,floorSize,floorHeight),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.black }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
 
 				// Add movable rigid body (mass = 1)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
-					mass: 1,
-					position: new CANNON.Vec3(-320, 0, 20),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add static rigid bodies (mass = 0)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
-					mass: 0,
-					position: new CANNON.Vec3(-80, -180, 90),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(100, 100, 2)),
-					mass: 0,
-					position: new CANNON.Vec3(140, -420, 175),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add movable rigid body (mass = 1)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
-					mass: 1,
-					position: new CANNON.Vec3(90, -420, 200),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add static rigid body (mass = 0)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(45, 45, 5)),
-					mass: 0,
-					position: new CANNON.Vec3(400, -420, 285),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add movable rigid body (mass = 2)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(10, 25, 230)),
-					mass: 2,
-					position: new CANNON.Vec3(402, -420, 520),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add static rigid bodies (mass = 0)
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(45, 45, 5)),
-					mass: 0,
-					position: new CANNON.Vec3(900, -420, 285),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				_cannon.createRigidBody({
-					shape: new CANNON.Box(new CANNON.Vec3(30, 30, 30)),
-					mass: 0,
-					position: new CANNON.Vec3(900, -110, 285),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Grid Helper
-				var grid = new THREE.GridHelper(floorSize, floorSize / 10);
-				grid.position.z = 0.5;
-				grid.rotation.x = window.game.helpers.degToRad(90);
-				_three.scene.add(grid);
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
+				//	mass: 1,
+				//	position: new CANNON.Vec3(-320, 0, 20),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
+//
+				//// Add static rigid bodies (mass = 0)
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
+				//	mass: 0,
+				//	position: new CANNON.Vec3(-80, -180, 90),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
+//
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(100, 100, 2)),
+				//	mass: 0,
+				//	position: new CANNON.Vec3(140, -420, 175),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
+//
+				//// Add movable rigid body (mass = 1)
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
+				//	mass: 1,
+				//	position: new CANNON.Vec3(90, -420, 200),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
+//
+				//// Add static rigid body (mass = 0)
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(45, 45, 5)),
+				//	mass: 0,
+				//	position: new CANNON.Vec3(400, -420, 285),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
+//
+				//// Add movable rigid body (mass = 2)
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(10, 25, 230)),
+				//	mass: 2,
+				//	position: new CANNON.Vec3(402, -420, 520),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
+//
+				//// Add static rigid bodies (mass = 0)
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(45, 45, 5)),
+				//	mass: 0,
+				//	position: new CANNON.Vec3(900, -420, 285),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
+//
+				//_cannon.createBody({
+				//	shape: new CANNON.Box(new CANNON.Vec3(30, 30, 30)),
+				//	mass: 0,
+				//	position: new CANNON.Vec3(900, -110, 285),
+				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
+				//	physicsMaterial: _cannon.solidMaterial
+				//});
+//
+				//// Grid Helper
+				//var grid = new THREE.GridHelper(floorSize, floorSize / 10);
+				//grid.position.z = 0.5;
+				//grid.rotation.x = window.game.helpers.degToRad(90);
+				//_three.scene.add(grid);
 			}
 		},
 
@@ -176,10 +182,10 @@ window.game.core = function () {
 			_animationFrameLoop =  window.requestAnimationFrame(_game.loop);
 			_controllerHandler.updateStatus();
 			// Update Cannon.js world and player state
-			_cannon.updatePhysics();
-			_playerHandler.updatePlayers();
-			_game.enemy.update();
-			_enemyHandler.updateEnemies();
+			//_cannon.updatePhysics();
+			//_playerHandler.updatePlayers();
+			//_game.enemy.update();
+			//_enemyHandler.updateEnemies();
 			// Render visual scene
 			_three.render();
 		},
@@ -201,13 +207,13 @@ window.game.core = function () {
 			_controllerHandler.init(_playerHandler);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
-			_enemyHandler.addEnemy(new THREE.Vector3(200,200,100));
+			//_enemyHandler.addEnemy(new THREE.Vector3(200,200,100));
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {
 				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
 					_ui.fadeOut("infoboxIntro");
-					_playerHandler.addPlayer();
+					//_playerHandler.addPlayer();
 				}
 			};
 
