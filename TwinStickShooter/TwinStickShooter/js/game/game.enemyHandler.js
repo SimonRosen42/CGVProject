@@ -42,7 +42,7 @@ class Enemy {
 	}
 
 	destroy(cannon) {
-		cannon.removeVisual(this.rigidBody);
+		cannon.removeVisual(this.body);
 	}
 
 
@@ -58,7 +58,7 @@ class Enemy {
 		var min = 10000000;
 		var minPlayerIndex = -1;
 		for (var i = 0; i < playerHandler.player.length; i++) {
-			var currDistance = getStraightLineDistance(this.rigidBody.position, playerHandler.player[i].rigidBody.position);
+			var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
 			if (currDistance < min) {
 				min = currDistance;
 				minPlayerIndex = i;
@@ -66,12 +66,12 @@ class Enemy {
 		}
 		if (playerHandler.player[minPlayerIndex] != null) {
 			var closestPlayer = playerHandler.player[minPlayerIndex];
-			var closestPlayerPosition = closestPlayer.rigidBody.position;
-			var v = new CANNON.Vec3(closestPlayerPosition.x - this.rigidBody.position.x, closestPlayerPosition.y - this.rigidBody.position.y, 0);
+			var closestPlayerPosition = closestPlayer.body.position;
+			var v = new CANNON.Vec3(closestPlayerPosition.x - this.body.position.x, 0, closestPlayerPosition.z - this.body.position.z);
 			var magnitude = Math.sqrt(Math.pow(v.x,2)+Math.pow(v.y,2)+Math.pow(v.z,2));
 			var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
-			direction = new CANNON.Vec3(direction.x*this.speed,direction.y*this.speed,this.rigidBody.velocity.z);
-			this.rigidBody.velocity.set(direction.x,direction.y,this.rigidBody.velocity.z);
+			direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
+			this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
 		}
 
 		// TODO: use variables above to set the path for the enemy

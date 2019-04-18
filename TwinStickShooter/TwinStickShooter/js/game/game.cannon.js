@@ -14,8 +14,6 @@ window.game.cannon = function() {
 		bodies: [],
 		// Visuals are the visual representations of the bodies that are finally rendered by THREE.js
 		visuals: [],
-		// Store the body count in an index
-		bodyCount: 0,
 		// Default friction and restitution
 		friction: 0.0,
 		restitution: 0.0,
@@ -29,17 +27,54 @@ window.game.cannon = function() {
 		enemyPhysicsMaterial: null,
 		// Solid material for all other level objects
 		solidMaterial: null,
+		// Local storage of three
+		three: null,
 
 		// Methods
-		init: function(three) {
-			// A small collision detection extension to get the indices of the collision pair
-			//_cannon.overrideCollisionMatrixSet();
+		init: function(t) {
+			_cannon.three = t;
+			_cannon.world = new CANNON.World();
+            _cannon.world.quatNormalizeSkip = 0;
+            _cannon.world.quatNormalizeFast = false;
 
-			// Setup Cannon.js world
-			_cannon.setup();
+            var solver = new CANNON.GSSolver();
 
-			// Get a reference to THREE.js to manage visuals
-			_three = three;
+            _cannon.world.defaultContactMaterial.contactEquationStiffness = 1e9;
+            _cannon.world.defaultContactMaterial.contactEquationRelaxation = 4;
+
+            solver.iterations = 7;
+            solver.tolerance = 0.1;
+            var split = true;
+            if(split)
+                _cannon.world.solver = new CANNON.SplitSolver(solver);
+        	else
+                _cannon.world.solver = solver;
+
+            _cannon.world.gravity.set(0,_cannon.gravity,0);
+            _cannon.world.broadphase = new CANNON.NaiveBroadphase();
+
+            // Create a slippery material (friction coefficient = 0.0)
+            var physicsMaterial = new CANNON.Material("slipperyMaterial");
+            var physicsContactMaterial = new CANNON.ContactMaterial(physicsMaterial,
+                                                                    physicsMaterial,
+                                                                    0.0, // friction coefficient
+                                                                    0.3  // restitution
+                                                                    );
+            // We must add the contact materials to the world
+            _cannon.world.addContactMaterial(physicsContactMaterial);
+
+            // Create a sphere
+           	//var mass = 5, radius = 1.3;
+           	//var sphereShape = new CANNON.Sphere(radius);
+           	//var sphereBody = new CANNON.Body({ mass: mass });
+           	//sphereBody.addShape(sphereShape);
+           	//sphereBody.position.set(0,5,0);
+           	//sphereBody.linearDamping = 0.9;
+           	//_cannon.world.add(sphereBody);
+		},
+
+		setup: function() {
+
 		},
 
 		destroy: function () {
@@ -47,70 +82,65 @@ window.game.cannon = function() {
 			_cannon.removeAllVisuals();
 		},
 
-		setup: function () {
-			// Create a new physics simulation based on the default settings
-			_cannon.world = new CANNON.World();
-			_cannon.world.gravity.set(0, 0, _cannon.gravity);
-			_cannon.world.broadphase = new CANNON.NaiveBroadphase();
-			_cannon.world.solver.iterations = 5;
-
-			// Create empty arrays that will later be populated with rigid bodies and mesh references
-			_cannon.bodies = [];
-			_cannon.visuals = [];
-			_cannon.bodyCount = 0;
-		},
-
-		//overrideCollisionMatrixSet: function() {
-		//	// Override CANNON's collisionMatrixSet for player's "isGrounded" via monkey patch
-		//	var _cannon_collisionMatrixSet = CANNON.World.prototype.collisionMatrixSet;
-//
-		//	CANNON.World.prototype.collisionMatrixSet = function(i, j, value, current){
-		//		_cannon_collisionMatrixSet.call(this, i, j, [i, j], current);
-		//	};
-		//},
-
-		getCollisions: function(index) {
-			// Count the collisions of the provided index that is connected to a rigid body in the Cannon.js world
-			var collisions = 0;
-
-			for (var i = 0; i < _cannon.world.collisionMatrix.length; i++) {
-				if (_cannon.world.collisionMatrix[i] && _cannon.world.collisionMatrix[i].length && (_cannon.world.collisionMatrix[i][0] === index || _cannon.world.collisionMatrix[i][1] === index)) {
-					collisions++;
-				}
-			}
-
-			return collisions;
-		},
-
-		rotateOnAxis: function(body, axis, radians) {
+		rotateOnAxis: function(body, axis, radians) { //additive to rotation
 			// Equivalent to THREE's Object3D.rotateOnAxis
 			var rotationQuaternion = new CANNON.Quaternion();
 			rotationQuaternion.setFromAxisAngle(axis, radians);
 			body.quaternion = rotationQuaternion.mult(body.quaternion);
 		},
 
-		setOnAxis: function(body, axis, radians) {
+		setOnAxis: function(body, axis, radians) { //sets rotations
 			//set rotation of object from radians
 			body.quaternion.setFromAxisAngle(axis, radians);
 		},
 
 		createBody: function(options) {
 			// Creates a new rigid body based on specific options
-			var body  = new CANNON.Body({mass: options.mass/*, material: options.physicsMaterial */});
-			body.addShape(options.shape);
+			var body  = new CANNON.Body({mass: options.mass, shape: options.shape/*, material: options.physicsMaterial */});
 			body.position.set(options.position.x, options.position.y, options.position.z);
 
 			// Apply a rotation if set by using Quaternions
 			if (options.rotation) {
-				body.quaternion.setFromAxisAngle(options.rotation[0], options.rotation[1]);
+				_cannon.setOnAxis(body, options.rotation[0], options.rotation[1]);
+				//_cannon.rotateGeometry(options.geometry, options.rotation[0], options.rotation[1]);
 			}
 
+			//create visual mesh
+			var mesh = null;
+			if (options.meshMaterial) {
+				if (!options.geometry) {
+					var shape = body.shapes[0];
+					mesh = _cannon.shape2mesh(shape, options.meshMaterial);
+				} else {
+					mesh = new THREE.Mesh(options.geometry, options.meshMaterial);
+				}
+			} else {
+				console.error("Cannot create mesh without material");
+				return;
+			}
+			mesh.position.set(options.position.x, options.position.y, options.position.z);
+			if (options.receiveShadow) mesh.receiveShadow = options.receiveShadow;
+			if (options.castShadow) mesh.castShadow = options.castShadow;
 			// Add the entity to the scene and world
-			var mesh = new THREE.Mesh(options.geometry, options.meshMaterial);
 			_cannon.addVisual(body, mesh);
-			console.log(body,mesh);
 			return body;
 		},
+
+		getMeshFromBody: function(body) {
+			var bodyCount = _cannon.bodies.length;
+				for (var j = 0; j < bodyCount; j++){
+					if (body == _cannon.bodies[j]) {
+						break;
+					}
+				}
+			return _cannon.visuals[j];
+		},
+
+		//rotateGeometry: function(geometry, axis, radians) {
+		//	if (axis.x == 1) geometry.applyMatrix( new THREE.Matrix4().makeRotationX( radians ) );
+		//	else if (axis.y == 1) geometry.applyMatrix( new THREE.Matrix4().makeRotationY( radians ) );
+		//	else if (axis.z == 1) geometry.applyMatrix( new THREE.Matrix4().makeRotationZ( radians ) );
+		//},
 
 		createPhysicsMaterial: function(material, friction, restitution) {
 			// Create a new material and add a Cannon ContactMaterial to the world always using _cannon.playerPhysicsMaterial as basis
@@ -124,84 +154,57 @@ window.game.cannon = function() {
 
 		addVisual: function(body, mesh) {
 			// Populate the bodies and visuals arrays
-			if (mesh) {
+			if (body && mesh) {
 				_cannon.bodies.push(body);
 				_cannon.visuals.push(mesh);
-
 				// Add body/mesh to scene/world
-				_three.scene.add(mesh);
+				_cannon.three.scene.add(mesh);
 				_cannon.world.add(body);
+			} else {
+				console.error("body or mesh not found, cannot add visual mesh");
 			}
 		},
 
 		removeVisual: function(body){
 			// Remove an entity from the scene/world
-			if (body.visualref) {
-				var old_b = [];
-				var old_v = [];
-				var n = _cannon.bodies.length;
-
-				for (var i = 0; i < n; i++){
-					old_b.unshift(_cannon.bodies.pop());
-					old_v.unshift(_cannon.visuals.pop());
-				}
-
-				var id = body.visualref.visualId;
-
-				for (var j = 0; j < old_b.length; j++){
-					if (j !== id){
-						var i = j > id ? j - 1 : j;
-						_cannon.bodies[i] = old_b[j];
-						_cannon.visuals[i] = old_v[j];
-						_cannon.bodies[i].visualref = old_b[j].visualref;
-						_cannon.bodies[i].visualref.visualId = i;
-					}
-				}
-
-				body.visualref.visualId = null;
-				_three.scene.remove(body.visualref);
-				body.visualref = null;
+			if (body) {
+				_cannon.three.scene.remove(_cannon.getMeshFromBody(body));
 				_cannon.world.remove(body);
+				_cannon.visuals.splice(j,1);
+				_cannon.bodies.splice(j,1);
 			}
 		},
 		removeAllVisuals: function() {
 			// Clear the whole physics world and THREE.js scene
-			_cannon.bodies.forEach(function (body) {
-				if (body.visualref) {
-					body.visualref.visualId = null;
-					_three.scene.remove(body.visualref);
-					body.visualref = null;
-					_cannon.world.remove(body);
-				}
-			});
-
-			_cannon.bodies = [];
-			_cannon.visuals = [];
+			var bodyCount = _cannon.bodies.length;
+			for (var i = 0; i < bodyCount; i++ ){
+				_cannon.three.scene.remove(visuals[i]);
+				_cannon.world.remove(bodies[i]);
+			};
+			_cannon.bodies.splice(0,numBodies);
+			_cannon.visuals.splice(0,numBodies);
 		},
 		updatePhysics: function() {
 			// Store the amount of bodies into bodyCount
-			_cannon.bodyCount = _cannon.bodies.length;
-
+			var bodyCount = _cannon.bodies.length;
 			// Copy coordinates from Cannon.js to Three.js
-			for (var i = 0; i < _cannon.bodyCount; i++) {
+			for (var i = 0; i < bodyCount; i++) {
 				var body = _cannon.bodies[i], visual = _cannon.visuals[i];
-
-				body.position.copy(visual.position);
+				visual.position.set(body.position.x, body.position.y, body.position.z);
 
 				// Update the Quaternions
 				if (body.quaternion) {
-					body.quaternion.copy(visual.quaternion);
+					visual.quaternion.set(body.quaternion.x,body.quaternion.y,body.quaternion.z,body.quaternion.w);
 				}
 			}
-
 			// Perform a simulation step
 			_cannon.world.step(_cannon.timestep);
-		}
-		// shape2mesh: function(shape, currentMaterial) {
-		// 	// Convert a given shape to a THREE.js mesh
-		// 	var mesh;
-		// 	var submesh;
-		// 	switch (shape.type){
+		},
+		shape2mesh: function(shape, material) {
+		 	// Convert a given shape to a THREE.js mesh
+		 	var mesh;
+		 	//var submesh;
+		 	switch (shape.type){
 		// 		case CANNON.Shape.types.SPHERE:
 		// 			var sphere_geometry = new THREE.SphereGeometry(shape.radius, shape.wSeg, shape.hSeg);
 		// 			mesh = new THREE.Mesh(sphere_geometry, currentMaterial);
@@ -221,14 +224,15 @@ window.game.cannon = function() {
 		// 			mesh.add(submesh);
 		// 			break;
 
-		// 		case CANNON.Shape.types.BOX:
-		// 			var box_geometry = new THREE.CubeGeometry(shape.halfExtents.x * 2,
-		// 					shape.halfExtents.y * 2,
-		// 					shape.halfExtents.z * 2);
-		// 			mesh = new THREE.Mesh(box_geometry, currentMaterial);
-		// 			mesh.castShadow = true;
-		// 			mesh.receiveShadow = true;
-		// 			break;
+		 		case CANNON.Shape.types.BOX: {
+		 			var box = new THREE.BoxGeometry(shape.halfExtents.x * 2,
+		 					shape.halfExtents.y * 2,
+		 					shape.halfExtents.z * 2);
+		 			mesh = new THREE.Mesh(box, material);
+		 			mesh.castShadow = true;
+		 			mesh.receiveShadow = true;
+		 			break;
+		 		}
 
 		// 		case CANNON.Shape.types.COMPOUND:
 		// 			// recursive compounds
@@ -250,12 +254,12 @@ window.game.cannon = function() {
 		// 			}
 		// 			break;
 
-		// 		default:
-		// 			throw "Visual type not recognized: " + shape.type;
-		// 	}
+		 		default:
+		 			throw "Visual type not recognized: " + shape.type;
+			}
 
-		// 	mesh.receiveShadow = true;
-		// 	mesh.castShadow = true;
+		 	mesh.receiveShadow = true;
+			mesh.castShadow = true;
 
 		// 	if (mesh.children) {
 		// 		for (var i = 0; i < mesh.children.length; i++) {
@@ -271,8 +275,8 @@ window.game.cannon = function() {
 		// 		}
 		// 	}
 
-		// 	return mesh;
-		// }
+	 		return mesh;
+		}
 	};
 
 	var _three;

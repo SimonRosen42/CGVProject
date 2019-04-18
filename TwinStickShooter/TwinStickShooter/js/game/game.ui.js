@@ -32,17 +32,13 @@ window.game.ui = function() {
 		},
 		fadeOut: function (element) {
 			// Add a CSS class, fading is done via CSS3 transitions
-			if (!_ui.hasClass(element, "fade-out")) {
-				_ui.addClass(element, "fade-out");
-			}
+			_ui.addClass(element, "fade-out");
 		},
-		addClass: function (element, className, resetClassName) {
+		addClass: function (element, className) {
 			// Adds a class to a specified element
-			if (resetClassName && _ui.elements[element].getAttribute("data-classname")) {
-				_ui.elements[element].className = resetClassName && _ui.elements[element].getAttribute("data-classname");
+			if (!_ui.hasClass(element, className)) {
+				_ui.elements[element].className = _ui.elements[element].className + " " + className;
 			}
-
-			_ui.elements[element].className = _ui.elements[element].className + " " + className;
 		},
 		removeClass: function (element, className) {
 			// Removes a class from a specified element

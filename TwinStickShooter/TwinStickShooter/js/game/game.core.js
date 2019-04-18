@@ -8,143 +8,12 @@ window.game = window.game || {};
 
 window.game.core = function () {
 	var _game = {
-		// Attributes
-		enemy: {
-			model : null,
-			mesh : null,
-			collider : null,
-			rigidBody : null,
-			// Enemy mass which affects other rigid bodies in the world
-			mass : 1,
-		
-			acceleration : 1,
-			speedMax : 30,
-		
-			create : function() {
-		
-				_cannon.enemyPhysicsMaterial = _cannon.createPhysicsMaterial(new CANNON.Material("enemyMaterial"), 0.0, 0.0);
-				
-				_game.enemy.collider = new CANNON.Box(new CANNON.Vec3(10,10,10));
-		
-				_game.enemy.rigidBody = new CANNON.Body(_game.enemy.mass, _game.enemy.collider, _cannon.enemyPhysicsMaterial);
-				_game.enemy.rigidBody.position.set(0, 0, 10);
-				var meshVisual = new THREE.CylinderGeometry( 10, 10, 20, 32 );
-				//enemy.userData.model = window.game.core._three
-				_game.enemy.mesh = _cannon.addVisual(_game.enemy.rigidBody, new THREE.MeshLambertMaterial({ color: window.game.static.colors.red }), new THREE.Mesh(meshVisual, new THREE.MeshBasicMaterial({color : 0xff0000})));
-		
-				_game.enemy.rigidBody.addEventListener("collide", function(event) {
-		
-				} );
-			},
-
-			update: function() {
-				//_game.enemy.rigidBody.velocity.set(1,0,10);
-			}
-		},
-
-		level: {
-			// Methods
-			create: function() {
-				// Create a solid material for all objects in the world
-				_cannon.solidMaterial = _cannon.createPhysicsMaterial(new CANNON.Material("solidMaterial"), 0, 0.1);
-
-				// Define floor settings
-				var floorSize = 800;
-				var floorHeight = 20;
-				// Add a floor
-				_cannon.createBody({
-					shape: new CANNON.Box(new CANNON.Vec3(floorSize, floorSize, floorHeight)),
-					mass: 0,
-					position: new CANNON.Vec3(0, 0, -floorHeight),
-					geometry: new THREE.BoxGeometry(floorSize,floorSize,floorHeight),
-					meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.black }),
-					physicsMaterial: _cannon.solidMaterial
-				});
-
-				// Add movable rigid body (mass = 1)
-				//_cannon.createBody({
-				//	shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
-				//	mass: 1,
-				//	position: new CANNON.Vec3(-320, 0, 20),
-				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-				//	physicsMaterial: _cannon.solidMaterial
-				//});
-//
-				//// Add static rigid bodies (mass = 0)
-				//_cannon.createBody({
-				//	shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
-				//	mass: 0,
-				//	position: new CANNON.Vec3(-80, -180, 90),
-				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-				//	physicsMaterial: _cannon.solidMaterial
-				//});
-//
-				//_cannon.createBody({
-				//	shape: new CANNON.Box(new CANNON.Vec3(100, 100, 2)),
-				//	mass: 0,
-				//	position: new CANNON.Vec3(140, -420, 175),
-				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-				//	physicsMaterial: _cannon.solidMaterial
-				//});
-//
-				//// Add movable rigid body (mass = 1)
-				//_cannon.createBody({
-				//	shape: new CANNON.Box(new CANNON.Vec3(20, 20, 20)),
-				//	mass: 1,
-				//	position: new CANNON.Vec3(90, -420, 200),
-				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-				//	physicsMaterial: _cannon.solidMaterial
-				//});
-//
-				//// Add static rigid body (mass = 0)
-				//_cannon.createBody({
-				//	shape: new CANNON.Box(new CANNON.Vec3(45, 45, 5)),
-				//	mass: 0,
-				//	position: new CANNON.Vec3(400, -420, 285),
-				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-				//	physicsMaterial: _cannon.solidMaterial
-				//});
-//
-				//// Add movable rigid body (mass = 2)
-				//_cannon.createBody({
-				//	shape: new CANNON.Box(new CANNON.Vec3(10, 25, 230)),
-				//	mass: 2,
-				//	position: new CANNON.Vec3(402, -420, 520),
-				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-				//	physicsMaterial: _cannon.solidMaterial
-				//});
-//
-				//// Add static rigid bodies (mass = 0)
-				//_cannon.createBody({
-				//	shape: new CANNON.Box(new CANNON.Vec3(45, 45, 5)),
-				//	mass: 0,
-				//	position: new CANNON.Vec3(900, -420, 285),
-				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-				//	physicsMaterial: _cannon.solidMaterial
-				//});
-//
-				//_cannon.createBody({
-				//	shape: new CANNON.Box(new CANNON.Vec3(30, 30, 30)),
-				//	mass: 0,
-				//	position: new CANNON.Vec3(900, -110, 285),
-				//	meshMaterial: new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan }),
-				//	physicsMaterial: _cannon.solidMaterial
-				//});
-//
-				//// Grid Helper
-				//var grid = new THREE.GridHelper(floorSize, floorSize / 10);
-				//grid.position.z = 0.5;
-				//grid.rotation.x = window.game.helpers.degToRad(90);
-				//_three.scene.add(grid);
-			}
-		},
-
 		// Methods
 		init: function(options) {
 			// Setup necessary game components (_events, _three, _cannon, _ui)
 			_game.initComponents(options);
 			// Create player and level
-			_game.level.create();
+			//_game.level.create();
 			//_game.enemy.create();
 			// Initiate the game loop
 			_game.loop();
@@ -156,17 +25,13 @@ window.game.core = function () {
 			// Destroy THREE.js scene and Cannon.js world and recreate them
 			_cannon.destroy();
 			_cannon.setup();
-			_three.destroy();
-			_three.setup();
+			//_three.destroy();
+			//_three.setup();
 			_playerHandler.destroy();
 			_enemyHandler.destroy();
 
-			// Recreate player and level objects by using initial values which were copied at the first start
-			//_game.player = window.game.helpers.cloneObject(_gameDefaults.player);
-			_game.level = window.game.helpers.cloneObject(_gameDefaults.level);
-
 			// Create level again
-			_game.level.create();
+			//_game.level.create();
 
 			// Continue with the game loop
 			_game.loop();
@@ -179,7 +44,7 @@ window.game.core = function () {
 			_cannon.updatePhysics();
 			_playerHandler.updatePlayers();
 			//_game.enemy.update();
-			//_enemyHandler.updateEnemies();
+			_enemyHandler.updateEnemies();
 			// Render visual scene
 			_three.render();
 		},
@@ -194,14 +59,14 @@ window.game.core = function () {
 			_playerHandler = window.game.playerHandler();
 
 			// Initialize components with options
-			_three.init(options);
 			_cannon.init(_three);
+			_three.init(_cannon, options);
 			_ui.init();
 			_events.init();
 			_controllerHandler.init(_playerHandler);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
-			//_enemyHandler.addEnemy(new THREE.Vector3(200,200,100));
+			_enemyHandler.addEnemy(new THREE.Vector3(200,200,100));
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {
@@ -209,13 +74,29 @@ window.game.core = function () {
 					_ui.fadeOut("infoboxIntro");
 					_playerHandler.addPlayer();
 				}
+				if (_events.keyboard.pressed["leftArrow"]) {
+					_three.camera.position.set(_three.camera.position.x+0.1,_three.camera.position.y,_three.camera.position.z);
+					_three.camera.lookAt(0,0,0);
+				}
+				if (_events.keyboard.pressed["rightArrow"]) {
+					_three.camera.position.set(_three.camera.position.x-0.1,_three.camera.position.y,_three.camera.position.z);
+					_three.camera.lookAt(0,0,0);
+				}
+				if (_events.keyboard.pressed["upArrow"]) {
+					_three.camera.position.set(_three.camera.position.x,_three.camera.position.y,_three.camera.position.z+0.1);
+					_three.camera.lookAt(0,0,0);
+				}
+				if (_events.keyboard.pressed["downArrow"]) {
+					_three.camera.position.set(_three.camera.position.x,_three.camera.position.y,_three.camera.position.z-0.1);
+					_three.camera.lookAt(0,0,0);
+				}
 			};
 
-			 _controllerHandler.anyControllerButtonPressed = function() {
-			 	if (!_ui.hasClass("infoboxIntro", "fade-out")) {
-			 		_ui.fadeOut("infoboxIntro");
-			 	}
-			 };
+			_controllerHandler.anyControllerButtonPressed = function() {
+				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
+					_ui.fadeOut("infoboxIntro");
+				}
+			};
 		}
 	};
 
@@ -228,11 +109,6 @@ window.game.core = function () {
 	var _animationFrameLoop;
 	var _enemyHandler;
 	var _playerHandler;
-	// Game defaults which will be set one time after first start
-	var _gameDefaults = {
-		// player: window.game.helpers.cloneObject(_game.player),
-		level: window.game.helpers.cloneObject(_game.level)
-	};
 
 	return _game;
 };

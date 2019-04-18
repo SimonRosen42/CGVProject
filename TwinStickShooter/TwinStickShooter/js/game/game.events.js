@@ -15,6 +15,10 @@ window.game.events = function() {
 			// Will be used in game.core.player.controlKeys
 			keyCodes: {
 				32: "space",
+				37: "leftArrow",
+				38: "upArrow",
+				39: "rightArrow",
+				40: "downArrow",
 				65: "a",
 				68: "d",
 				83: "s",

@@ -15,7 +15,7 @@ class Player { //turn into class
 		this.isGrounded = false;
 		this.jumpHeight = 38;
 		// Configuration for player speed
-		this.speed = 40;
+		this.speed = 1;
 		// Third-person camera configuration
 		this.cameraCoords = null;
 		// Camera offsets behind the player (horizontally and vertically)
@@ -64,13 +64,23 @@ class Player { //turn into class
 		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
 		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
 		//]);
-		this.model = new THREE.SphereGeometry(5,32,32);
+		this.model = new THREE.BoxGeometry(1,1,1);
 		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
-		this.shape = new CANNON.Sphere(5);
-		this.body = new CANNON.Body({mass:this.mass, shape:this.shape, material:cannon.createPhysicsMaterial(cannon.playerPhysicsMaterial)});
-		this.body.position.set(0, 0, 50);
-		this.mesh = new THREE.Mesh (this.model, new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}))
-		cannon.addVisual(this.body, this.mesh);
+		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1));
+		this.body = cannon.createBody({
+			geometry: this.model,
+			position: {
+				x: 0,
+				y: 1,
+				z: 0
+			},
+			meshMaterial: new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}),
+			mass:this.mass, 
+			shape:this.shape, 
+			material:cannon.createPhysicsMaterial(cannon.playerPhysicsMaterial)
+		});
+		this.mesh = cannon.getMeshFromBody(this.body);
+		console.log(this.body.position);
 		//this.mesh.castShadow = true;
 		//this.mesh.receiveShadow = true;
 		// Create a HingeConstraint to limit player's air-twisting - this needs improvement
@@ -96,8 +106,9 @@ class Player { //turn into class
 	update(cannon,three,game,controllerHandler) {
 		// Basic game logic to update player and camera
 		this.processUserInput(cannon, controllerHandler);
-		this.updateCamera(three);
+		//this.updateCamera(three);
 		// Level-specific logic
+		//console.log(this.body.position, this.mesh.position);
 		this.checkGameOver(game);
 	}
 
@@ -113,14 +124,14 @@ class Player { //turn into class
 	}
 
 	moveWithAxis(horizontal, vertical) {
-		this.body.velocity.set(horizontal * this.speed, vertical * this.speed, this.body.velocity.z);
+		this.body.velocity.set(horizontal * this.speed, this.body.velocity.y, vertical * this.speed);
 	}
 
 	rotateOnAxis(horizontal, vertical, cannon) {
 		this.body.angularVelocity.z = 0;
 		if (horizontal == 0 && vertical == 0) return;
 		var polar = window.game.helpers.cartesianToPolar(horizontal,vertical);
-		cannon.setOnAxis(this.body, new CANNON.Vec3(0, 0, 1), polar.angle);
+		cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), polar.angle);
 	}
 
 	processUserInput(cannon, controllerHandler) {
@@ -132,7 +143,7 @@ class Player { //turn into class
 
 	checkGameOver(game) {
 		// Example game over mechanism which resets the game if the player is falling beneath -800
-		if (this.mesh.position.z <= -800) {
+		if (this.mesh.position.y <= -10) {
 			game.destroy();
 		}
 	}
