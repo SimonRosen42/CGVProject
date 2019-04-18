@@ -49,7 +49,7 @@ class controller {
        				if (pressedt) flag = true;
 	    		}
 	    		for (i = 0; i < this.gamePad.axes.length; i++) {
-	    			if ( i == 3 || i ==0)
+	    			if ( i == 3)
 	      				this.axes[i] = -1 *this.gamePad.axes[i].toFixed(4);
 	      			else 
 	      				this.axes[i] = this.gamePad.axes[i].toFixed(4);

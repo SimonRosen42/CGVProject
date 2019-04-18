@@ -122,6 +122,7 @@ window.game.cannon = function() {
 			if (options.receiveShadow) mesh.receiveShadow = options.receiveShadow;
 			if (options.castShadow) mesh.castShadow = options.castShadow;
 			// Add the entity to the scene and world
+
 			_cannon.addVisual(body, mesh);
 			return body;
 		},

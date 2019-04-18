@@ -66,7 +66,7 @@ window.game.core = function () {
 			_controllerHandler.init(_playerHandler);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
-			_enemyHandler.addEnemy(new THREE.Vector3(200,200,100));
+			_enemyHandler.addEnemy(new THREE.Vector3(5,2,5));
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {

@@ -64,11 +64,11 @@ class Player { //turn into class
 		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
 		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
 		//]);
-		this.model = new THREE.BoxGeometry(1,1,1);
 		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
-		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1));
+		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
+		//this.model = new THREE.BoxGeometry(1,1,1);
 		this.body = cannon.createBody({
-			geometry: this.model,
+			//geometry: this.model,
 			position: {
 				x: 0,
 				y: 1,
