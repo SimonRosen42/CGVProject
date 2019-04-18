@@ -39,6 +39,7 @@ window.game.three = function() {
            	_three.setupRenderer();
             window.addEventListener( 'resize', _three.onWindowResize, false );
             // floor
+            cannon.solidMaterial = cannon.playerPhysicsMaterial;
             cannon.createBody({
             	mass: 0,
             	shape: new CANNON.Plane(),
@@ -51,7 +52,8 @@ window.game.three = function() {
             	geometry: new THREE.PlaneGeometry( 300, 300, 50, 50 ),
             	meshMaterial: new THREE.MeshLambertMaterial({ color: 0xdddddd }),
             	receiveShadow: true,
-            	castShadow: false
+            	castShadow: false,
+            	material: cannon.solidMaterial
             });
 
             // Add boxes
@@ -90,7 +92,7 @@ window.game.three = function() {
         	//set up camera
             _three.camera = new THREE.PerspectiveCamera( _three.fov, window.innerWidth / window.innerHeight, _three.near, _three.far );
             _three.camera.up.set(0,1,0); //makes sure up vector is along y-axis
-            _three.camera.position.set(0,10,10);
+            _three.camera.position.set(0,20,20);
             _three.camera.lookAt(0,0,0);
         },
         setupScene: function() {

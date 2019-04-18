@@ -7,6 +7,8 @@ class Player { //turn into class
 		this.mesh = null;
 		this.shape = null;
 		this.body = null;
+		this.shootPosition = new CANNON.Vec3(0,0,0);
+		this.projectiles = [];
 		// Player mass which affects other rigid bodies in the world
 		this.mass = 3;
 		// HingeConstraint to limit player's air-twisting
@@ -15,7 +17,7 @@ class Player { //turn into class
 		this.isGrounded = false;
 		this.jumpHeight = 38;
 		// Configuration for player speed
-		this.speed = 1;
+		this.speed = 5;
 		// Third-person camera configuration
 		this.cameraCoords = null;
 		// Camera offsets behind the player (horizontally and vertically)
@@ -75,9 +77,10 @@ class Player { //turn into class
 				z: 0
 			},
 			meshMaterial: new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}),
-			mass:this.mass, 
-			shape:this.shape, 
-			material: cannon.playerPhysicsMaterial
+			mass: this.mass, 
+			shape: this.shape, 
+			material: cannon.playerPhysicsMaterial,
+			castShadow: true
 		});
 		this.mesh = cannon.getMeshFromBody(this.body);
 		//this.mesh.castShadow = true;
@@ -104,10 +107,11 @@ class Player { //turn into class
 
 	update(cannon,three,game,controllerHandler) {
 		// Basic game logic to update player and camera
+		this.body.pointToWorldFrame(new CANNON.Vec3(1,0,0), this.shootPosition);
 		this.processUserInput(cannon, controllerHandler);
 		//this.updateCamera(three);
 		// Level-specific logic
-		//console.log(this.body.position, this.mesh.position);
+		
 		this.checkGameOver(game);
 	}
 
@@ -127,7 +131,7 @@ class Player { //turn into class
 	}
 
 	rotateOnAxis(horizontal, vertical, cannon) {
-		this.body.angularVelocity.z = 0;
+		this.body.angularVelocity.y = 0;
 		if (horizontal == 0 && vertical == 0) return;
 		var polar = window.game.helpers.cartesianToPolar(horizontal,vertical);
 		cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), polar.angle);
@@ -137,7 +141,30 @@ class Player { //turn into class
 		if (this.controller != null) { //controller connected
 			this.moveWithAxis(this.controller.axes[this.axisCode.leftHorizontal],this.controller.axes[this.axisCode.leftVertical]);
 			this.rotateOnAxis(this.controller.axes[this.axisCode.rightHorizontal],this.controller.axes[this.axisCode.rightVertical],cannon);
+			if (this.controller.pressed[this.controllerCodes.cross]) {
+				this.fireProjectile(cannon);
+			}
 		}
+	}
+
+	fireProjectile(cannon) {
+		console.log("fired");
+		this.projectiles.push(cannon.createBody({
+			mass: 1,
+			position: {
+				x: this.shootPosition.x,
+				y: this.shootPosition.y,
+				z: this.shootPosition.z
+			},
+			meshMaterial: new THREE.MeshBasicMaterial({color: 0x010101}),
+			shape: new CANNON.Sphere(0.1),
+			material: cannon.solidMaterial
+		}));
+		this.projectiles[this.projectiles.length-1].velocity.set(
+			(this.projectiles[this.projectiles.length-1].position.x - this.body.position.x)*2,
+			(this.projectiles[this.projectiles.length-1].position.y - this.body.position.y)*2,
+			(this.projectiles[this.projectiles.length-1].position.z - this.body.position.z)*2
+		);
 	}
 
 	checkGameOver(game) {

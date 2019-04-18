@@ -9,7 +9,7 @@ class Enemy {
 	constructor() {
 
 		this.mass = 3,
-		this.speed = 10,
+		this.speed = 1,
 		this.speedMax = 30, // Enemy mass which affects other rigid bodies in the world
 		this.body = null;
 		// Enemy entity including mesh and rigid body
@@ -37,6 +37,7 @@ class Enemy {
 				z: pos.z
 			},
 			//geometry: this.model
+			castShadow: true
 		});
 		
 		//enemy.userData.model = window.game.core._three
@@ -78,7 +79,6 @@ class Enemy {
 			var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
 			direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
 			this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
-			console.log(this.body.position);
 		}
 
 		// TODO: use variables above to set the path for the enemy

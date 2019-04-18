@@ -58,7 +58,7 @@ window.game.cannon = function() {
             playerPhysicsMaterial = new CANNON.ContactMaterial(physicsMaterial,
                                                                     physicsMaterial,
                                                                     0.0, // friction coefficient
-                                                                    0.3  // restitution
+                                                                    0.0  // restitution
                                                                     );
             // We must add the contact materials to the world
             _cannon.world.addContactMaterial(playerPhysicsMaterial);
@@ -206,10 +206,10 @@ window.game.cannon = function() {
 		 	var mesh;
 		 	//var submesh;
 		 	switch (shape.type){
-		// 		case CANNON.Shape.types.SPHERE:
-		// 			var sphere_geometry = new THREE.SphereGeometry(shape.radius, shape.wSeg, shape.hSeg);
-		// 			mesh = new THREE.Mesh(sphere_geometry, currentMaterial);
-		// 			break;
+		 		case CANNON.Shape.types.SPHERE:
+		 			var sphere = new THREE.SphereGeometry(shape.radius, 32, 32);
+		 			mesh = new THREE.Mesh(sphere, material);
+		 			break;
 
 		// 		case CANNON.Shape.types.PLANE:
 		// 			var geometry = new THREE.PlaneGeometry(100, 100);
@@ -284,9 +284,6 @@ window.game.cannon = function() {
 		 		default:
 		 			throw "Visual type not recognized: " + shape.type;
 			}
-
-		 	mesh.receiveShadow = true;
-			mesh.castShadow = true;
 
 		// 	if (mesh.children) {
 		// 		for (var i = 0; i < mesh.children.length; i++) {
