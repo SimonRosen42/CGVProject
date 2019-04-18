@@ -77,10 +77,9 @@ class Player { //turn into class
 			meshMaterial: new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}),
 			mass:this.mass, 
 			shape:this.shape, 
-			material:cannon.createPhysicsMaterial(cannon.playerPhysicsMaterial)
+			material: cannon.playerPhysicsMaterial
 		});
 		this.mesh = cannon.getMeshFromBody(this.body);
-		console.log(this.body.position);
 		//this.mesh.castShadow = true;
 		//this.mesh.receiveShadow = true;
 		// Create a HingeConstraint to limit player's air-twisting - this needs improvement

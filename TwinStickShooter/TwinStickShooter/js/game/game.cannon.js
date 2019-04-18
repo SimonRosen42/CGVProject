@@ -55,13 +55,13 @@ window.game.cannon = function() {
 
             // Create a slippery material (friction coefficient = 0.0)
             var physicsMaterial = new CANNON.Material("slipperyMaterial");
-            var physicsContactMaterial = new CANNON.ContactMaterial(physicsMaterial,
+            playerPhysicsMaterial = new CANNON.ContactMaterial(physicsMaterial,
                                                                     physicsMaterial,
                                                                     0.0, // friction coefficient
                                                                     0.3  // restitution
                                                                     );
             // We must add the contact materials to the world
-            _cannon.world.addContactMaterial(physicsContactMaterial);
+            _cannon.world.addContactMaterial(playerPhysicsMaterial);
 
             // Create a sphere
            	//var mass = 5, radius = 1.3;
@@ -234,6 +234,32 @@ window.game.cannon = function() {
 		 			mesh.receiveShadow = true;
 		 			break;
 		 		}
+
+		 		case CANNON.Shape.types.CONVEXPOLYHEDRON: {
+            		var geo = new THREE.Geometry();
+
+        			// Add vertices
+            		for (var i = 0; i < shape.vertices.length; i++) {
+                		var v = shape.vertices[i];
+            		    geo.vertices.push(new THREE.Vector3(v.x, v.y, v.z));
+            		}
+		
+            		for(var i=0; i < shape.faces.length; i++){
+            		    var face = shape.faces[i];
+		
+            		    // add triangles
+            		    var a = face[0];
+            		    for (var j = 1; j < face.length - 1; j++) {
+            		        var b = face[j];
+            		        var c = face[j + 1];
+            		        geo.faces.push(new THREE.Face3(a, b, c));
+            		    }
+            		}
+            		geo.computeBoundingSphere();
+            		geo.computeFaceNormals();
+            		mesh = new THREE.Mesh( geo, material );
+            		break;
+            	}
 
 		// 		case CANNON.Shape.types.COMPOUND:
 		// 			// recursive compounds

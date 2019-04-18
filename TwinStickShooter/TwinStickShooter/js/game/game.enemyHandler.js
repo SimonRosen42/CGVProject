@@ -19,19 +19,28 @@ class Enemy {
 		
 	}
 
-	create(cannon, three, position) {
+	create(cannon, three, pos) {
 
 		// function that creates an enemy character
 
 		cannon.enemyPhysicsMaterial = cannon.createPhysicsMaterial(new CANNON.Material("enemyMaterial"), 0.0, 0.0);
-
-		this.body = new CANNON.Body(this.mass, this.collider, cannon.enemyPhysicsMaterial);
-		this.body.position.set(position.x, position.y, position.z);
 		this.shape = new CANNON.Cylinder(1, 1, 3, 32);
-		this.body.addShape(this.shape);
-
+		//this.model = new THREE.CylinderGeometry(1, 1, 3, 32);
+		this.body = new cannon.createBody({
+			mass: this.mass, 
+			shape: this.shape, 
+			material: cannon.enemyPhysicsMaterial,
+			meshMaterial: new THREE.MeshLambertMaterial({color : 0xff0000}),
+			position: {
+				x: pos.x,
+				y: pos.y,
+				z: pos.z
+			},
+			//geometry: this.model
+		});
+		
 		//enemy.userData.model = window.game.core._three
-		this.mesh = cannon.addVisual(this.body, new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 3, 32), new THREE.MeshLambertMaterial({color : 0xff0000})));
+		this.mesh = cannon.getMeshFromBody(this.body);
 
 		// this.body.addEventListener("collide", function(event) {
 
