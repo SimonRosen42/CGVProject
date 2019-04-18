@@ -120,11 +120,11 @@ window.game.three = function() {
 
             light.shadow.camera.near = 20;
             light.shadow.camera.far = 50;
-            light.shadow.camera.fov = 40;
+            light.shadow.camera.fov = 45;
             light.shadowMapBias = 0.1;
             light.shadowMapDarkness = 0.7;
-            light.shadow.mapSize.width = 2*512;
-            light.shadow.mapSize.height = 2*512;
+            light.shadow.mapSize.width = 512*2;
+            light.shadow.mapSize.height = 512*2;
 
             //light.shadowCameraVisible = true;
             _three.scene.add( light );

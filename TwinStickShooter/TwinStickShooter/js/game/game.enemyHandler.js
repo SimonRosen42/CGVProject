@@ -8,9 +8,8 @@ class Enemy {
 
 	constructor() {
 
-		this.collider = null;
 		this.mass = 3,
-		this.speed = 3,
+		this.speed = 10,
 		this.speedMax = 30, // Enemy mass which affects other rigid bodies in the world
 		this.body = null;
 		// Enemy entity including mesh and rigid body
@@ -26,15 +25,13 @@ class Enemy {
 
 		cannon.enemyPhysicsMaterial = cannon.createPhysicsMaterial(new CANNON.Material("enemyMaterial"), 0.0, 0.0);
 
-		this.collider = new CANNON.Cylinder(10, 10, 30, 32);
-
 		this.body = new CANNON.Body(this.mass, this.collider, cannon.enemyPhysicsMaterial);
 		this.body.position.set(position.x, position.y, position.z);
-		this.shape = new CANNON.Sphere(1);
+		this.shape = new CANNON.Cylinder(1, 1, 3, 32);
 		this.body.addShape(this.shape);
 
 		//enemy.userData.model = window.game.core._three
-		this.mesh = cannon.addVisual(this.body, new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 30, 32), new THREE.MeshBasicMaterial({color : 0xff0000})));
+		this.mesh = cannon.addVisual(this.body, new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 3, 32), new THREE.MeshLambertMaterial({color : 0xff0000})));
 
 		// this.body.addEventListener("collide", function(event) {
 
@@ -72,6 +69,7 @@ class Enemy {
 			var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
 			direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
 			this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
+			console.log(this.body.position);
 		}
 
 		// TODO: use variables above to set the path for the enemy
