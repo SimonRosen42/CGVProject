@@ -20,7 +20,7 @@ window.game.cannon = function() {
 		// Default Z gravity (approximation of 9,806)
 		gravity: -10,
 		// Interval speed for Cannon.js to step the physics simulation
-		timestep: 1 / 16,
+		timestep: 1 / 8,
 		// Player physics material that will be assigned in game.core.js
 		playerPhysicsMaterial: null,
 		// Enemy physics material that will be assigned in game.core.js
@@ -29,6 +29,13 @@ window.game.cannon = function() {
 		solidMaterial: null,
 		// Local storage of three
 		three: null,
+		//collision group settings in english (must be powers of 2 as it uses bitshifting)
+		collisionGroup: {
+			player : 1,
+			projectile : 2,
+			enemy : 4,
+			solids : 8,
+		},
 
 		// Methods
 		init: function(t) {
@@ -62,15 +69,6 @@ window.game.cannon = function() {
                                                                     );
             // We must add the contact materials to the world
             _cannon.world.addContactMaterial(playerPhysicsMaterial);
-
-            // Create a sphere
-           	//var mass = 5, radius = 1.3;
-           	//var sphereShape = new CANNON.Sphere(radius);
-           	//var sphereBody = new CANNON.Body({ mass: mass });
-           	//sphereBody.addShape(sphereShape);
-           	//sphereBody.position.set(0,5,0);
-           	//sphereBody.linearDamping = 0.9;
-           	//_cannon.world.add(sphereBody);
 		},
 
 		setup: function() {
@@ -100,9 +98,15 @@ window.game.cannon = function() {
 			body.position.set(options.position.x, options.position.y, options.position.z);
 
 			// Apply a rotation if set by using Quaternions
-			if (options.rotation) {
-				_cannon.setOnAxis(body, options.rotation[0], options.rotation[1]);
-				//_cannon.rotateGeometry(options.geometry, options.rotation[0], options.rotation[1]);
+			if (options.rotation) _cannon.setOnAxis(body, options.rotation[0], options.rotation[1]);
+
+			if (options.collisionGroup && options.collisionFilter) {
+				_cannon.applyCollisionGroups(body, options.collisionGroup, options.collisionFilter);
+			} else {
+				if (options.collisionGroup || options.collisionFilter) { //errors if one is present but not the other
+					if (options.collisionGroup) console.error("cannot set collision group as filter is missing");
+					else console.error("cannot set collision filter as group is missing")
+				}
 			}
 
 			//create visual mesh
@@ -125,6 +129,18 @@ window.game.cannon = function() {
 
 			_cannon.addVisual(body, mesh);
 			return body;
+		},
+
+		applyCollisionGroups (body, group, masks) {
+			var mask;
+			if (masks.length > 1) {
+				mask = masks[0];
+				for (var i = 1; i < masks.length; i++) {
+					mask = mask | masks[i];
+				}
+			} else mask = masks;
+			body.collisionFilterGroup = group;
+			body.collisionFilterMask = mask;
 		},
 
 		getMeshFromBody: function(body) {

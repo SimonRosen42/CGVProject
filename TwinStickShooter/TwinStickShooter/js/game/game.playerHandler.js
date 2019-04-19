@@ -39,7 +39,7 @@ class Projectile {
 		this.clock = new THREE.Clock();
 		this.clock.start();
 		this.body = cannon.createBody({
-			mass: 0,
+			mass: 0.01,
 			position: {
 				x: weapon.shootPosition.x,
 				y: weapon.shootPosition.y,
@@ -47,16 +47,33 @@ class Projectile {
 			},
 			meshMaterial: new THREE.MeshBasicMaterial({color: 0x010101}),
 			shape: new CANNON.Sphere(0.1),
-			material: cannon.solidMaterial
+			material: cannon.solidMaterial,
+			collisionGroup: cannon.collisionGroup.projectile,
+			collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
 		});
 		this.body.velocity.set(
 			(this.body.position.x - this.weapon.player.body.position.x)*this.speed,
 			(this.body.position.y - this.weapon.player.body.position.y)*this.speed,
 			(this.body.position.z - this.weapon.player.body.position.z)*this.speed
 		);
+		this.body.addEventListener("collide", function(e){			
+			var enemy = weapon.player.enemyHandler.getEnemyFromBody(e.body);
+				if (enemy != null) {
+					enemy.takeDamage(2);
+				//setTimeout(function() { //have to set timeout or else removes body before end of physics frame
+          		//	console.log("collided with ", enemy);
+          		//	weapon.player.enemyHandler.removeEnemy(enemy);
+    			//}, 0);
+				}
+		});
 	}
 
 	update() {
+		this.body.velocity.set(
+			this.body.velocity.x,
+			0,
+			this.body.velocity.z
+		);
 		if (this.clock.getElapsedTime() > 1) {
 			this.weapon.removeProjectile(this);
 		}
@@ -65,13 +82,15 @@ class Projectile {
 }
 
 class Player { //turn into class
-	constructor(controller) {
+	constructor(controller, enemyHandler) {
 		this.controller = controller;
 		this.weapon = null; //weapon holder
-		this.model = null;
+		this.enemyHandler = enemyHandler;
+		//mesh, body and shape of collider
 		this.mesh = null;
 		this.shape = null;
 		this.body = null;
+		//lastRotation to keep player from rolling around
 		this.lastRotation = null;
 		// Player mass which affects other rigid bodies in the world
 		this.mass = 3;
@@ -132,7 +151,6 @@ class Player { //turn into class
 		//]);
 		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
 		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
-		//this.model = new THREE.BoxGeometry(1,1,1);
 		this.body = cannon.createBody({
 			//geometry: this.model,
 			position: {
@@ -144,7 +162,9 @@ class Player { //turn into class
 			mass: this.mass, 
 			shape: this.shape, 
 			material: cannon.playerPhysicsMaterial,
-			castShadow: true
+			castShadow: true,
+			collisionGroup: cannon.collisionGroup.player,
+			collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
 		});
 		this.mesh = cannon.getMeshFromBody(this.body);
 		this.weapon = new Weapon(this, cannon);
@@ -235,11 +255,12 @@ window.game.playerHandler = function () {
 		game: null,
 		controllerHandler: null,
 		ui: null,
+		enemyHandler: null,
 
 		player: [],
 
 		addPlayer: function(controller) {
-			var temp = new Player(controller);
+			var temp = new Player(controller, this.enemyHandler);
 			temp.create(_playerHandler.cannon, _playerHandler.three);
 			_playerHandler.players++;
 		  	_playerHandler.player.push(temp);
@@ -273,7 +294,7 @@ window.game.playerHandler = function () {
 			_playerHandler.player.splice(0,_playerHandler.player.length);
 		},
 
-		init: function(c,t,g,ch,ui) {
+		init: function(c,t,g,ch,ui,eh) {
 			_playerHandler.cannon = c;
 			_playerHandler.three = t;
 			_playerHandler.game = g;
@@ -281,6 +302,7 @@ window.game.playerHandler = function () {
 			// Create a global physics material for the player which will be used as ContactMaterial for all other objects in the level
 			_playerHandler.cannon.playerPhysicsMaterial = new CANNON.Material("playerMaterial");
 			_playerHandler.ui = ui;
+			_playerHandler.enemyHandler = eh;
 		}
 
 	}

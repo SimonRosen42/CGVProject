@@ -6,7 +6,7 @@ class Enemy {
 	// // static variables shared between each instance of this class
 	// static players = [];
 
-	constructor() {
+	constructor(i) {
 
 		this.mass = 3,
 		this.speed = 1,
@@ -15,6 +15,8 @@ class Enemy {
 		// Enemy entity including mesh and rigid body
 		this.model = null; 
 		this.shape = null;
+		this.index = i;
+		this.health = 10;
 		//enemy.rotation = rotation;
 		
 	}
@@ -37,7 +39,9 @@ class Enemy {
 				z: pos.z
 			},
 			//geometry: this.model
-			castShadow: true
+			castShadow: true,
+			collisionGroup: cannon.collisionGroup.enemy,
+			collisionFilter: cannon.collisionGroup.player | cannon.collisionGroup.solids | cannon.collisionGroup.projectile
 		});
 		
 		//enemy.userData.model = window.game.core._three
@@ -46,6 +50,10 @@ class Enemy {
 		// this.body.addEventListener("collide", function(event) {
 
 		// } );
+	}
+
+	takeDamage(damage) {
+		this.health -= damage;
 	}
 
 	destroy(cannon) {
@@ -99,20 +107,20 @@ window.game.enemyHandler = function() {
 		enemies: [],
 
 		addEnemy: function(position) {
-			var enemy = new Enemy();
+			var enemy = new Enemy(_enemyHandler.numEnemies);
 			enemy.create(_enemyHandler.cannon, _enemyHandler.three, position);
 			_enemyHandler.enemies.push(enemy);
 			_enemyHandler.numEnemies++;
 
 		},
 
-		removeEnemy: function(id) {
+		removeEnemy: function(enemy) {
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
-				if (_enemyHandler.enemies[i] != null && _enemyHandler.enemies[i].id == id) {
+				if (_enemyHandler.enemies[i].index == enemy.index) {
 					_enemyHandler.enemies[i].destroy(_enemyHandler.cannon);
-					_enemyHandler.splice(i, 1);
+					_enemyHandler.enemies.splice(i, 1);
 					_enemyHandler.numEnemies--;
-					break;
+					return;
 				}
 			}
 		},
@@ -122,7 +130,19 @@ window.game.enemyHandler = function() {
 			// update players (player coordinates may have changed)
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
 				_enemyHandler.enemies[i].update(_enemyHandler.playerHandler);
+				if (_enemyHandler.enemies[i].health <= 0) {
+					_enemyHandler.removeEnemy(_enemyHandler.enemies[i]);
+				}
 			}
+		},
+
+		getEnemyFromBody: function(body) {
+			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
+				if (_enemyHandler.enemies[i].body == body) {
+					return _enemyHandler.enemies[i];
+				}
+			}
+			return null;
 		},
 
 		destroy: function() {

@@ -53,30 +53,34 @@ window.game.three = function() {
             	meshMaterial: new THREE.MeshLambertMaterial({ color: 0xdddddd }),
             	receiveShadow: true,
             	castShadow: false,
-            	material: cannon.solidMaterial
+            	material: cannon.solidMaterial,
+            	collisionGroup: cannon.collisionGroup.solids,
+            	collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.player | cannon.collisionGroup.solids
             });
 
             // Add boxes
-            var halfExtents = new CANNON.Vec3(1,1,1);
-            var boxShape = new CANNON.Box(halfExtents);
-            var boxGeometry = new THREE.BoxGeometry(halfExtents.x*2,halfExtents.y*2,halfExtents.z*2);
-            for(var i=0; i<7; i++){
-                var xP = (Math.random()-0.5)*20;
-                var yP = 1 + (Math.random()-0.5)*1;
-                var zP = (Math.random()-0.5)*20;
-                cannon.createBody({
-                	mass: 5,
-                	shape: boxShape,
-                	position: {
-                		x: xP,
-                		y: yP,
-                		z: zP
-                	},
-                	//geometry: boxGeometry,
-                	meshMaterial: new THREE.MeshLambertMaterial({color: 0x991199}),
-                	receiveShadow: false,
-                	castShadow: true
-                });
+          //var halfExtents = new CANNON.Vec3(1,1,1);
+          //var boxShape = new CANNON.Box(halfExtents);
+          //var boxGeometry = new THREE.BoxGeometry(halfExtents.x*2,halfExtents.y*2,halfExtents.z*2);
+          //for(var i=0; i<7; i++){
+          //    var xP = (Math.random()-0.5)*20;
+          //    var yP = 1 + (Math.random()-0.5)*1;
+          //    var zP = (Math.random()-0.5)*20;
+          //    cannon.createBody({
+          //    	mass: 5,
+          //    	shape: boxShape,
+          //    	position: {
+          //    		x: xP,
+          //    		y: yP,
+          //    		z: zP
+          //    	},
+          //    	//geometry: boxGeometry,
+          //    	meshMaterial: new THREE.MeshLambertMaterial({color: 0x991199}),
+          //    	receiveShadow: false,
+          //    	castShadow: true,
+          //    	collisionGroup: cannon.collisionGroup.solids,
+          //		collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.player | cannon.collisionGroup.solids
+          //    });
                 //var boxBody = new CANNON.Body({ mass: 5 });
                 //boxBody.addShape(boxShape);
                 //var boxMesh = new THREE.Mesh( boxGeometry, material );
@@ -86,7 +90,7 @@ window.game.three = function() {
                 //boxMesh.position.set(x,y,z);
                 //boxMesh.castShadow = true;
                 //boxMesh.receiveShadow = true;
-            }
+            //}
         },
         setupCamera: function() {
         	//set up camera
