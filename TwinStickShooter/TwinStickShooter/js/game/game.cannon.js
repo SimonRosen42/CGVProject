@@ -62,13 +62,15 @@ window.game.cannon = function() {
 
             // Create a slippery material (friction coefficient = 0.0)
             var physicsMaterial = new CANNON.Material("slipperyMaterial");
-            playerPhysicsMaterial = new CANNON.ContactMaterial(physicsMaterial,
-                                                                    physicsMaterial,
-                                                                    0.0, // friction coefficient
-                                                                    0.0  // restitution
-                                                                    );
+            _cannon.playerPhysicsMaterial = new CANNON.ContactMaterial(physicsMaterial,
+                                                                	   physicsMaterial,
+                                                                       0.0, // friction coefficient
+                                                                       0.0  // restitution
+                                                                       );
             // We must add the contact materials to the world
-            _cannon.world.addContactMaterial(playerPhysicsMaterial);
+            _cannon.world.addContactMaterial(_cannon.playerPhysicsMaterial);
+            var solidsMaterial = new CANNON.Material("solidsMaterial");
+            _cannon.solidMaterial = _cannon.createPhysicsMaterial(solidsMaterial,0,0);
 		},
 
 		setup: function() {

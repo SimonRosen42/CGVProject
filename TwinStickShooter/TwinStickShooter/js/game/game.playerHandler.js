@@ -100,6 +100,7 @@ class Player { //turn into class
 		this.isGrounded = false;
 		this.jumpHeight = 38;
 		// Configuration for player speed
+		this.acceleration = 5;
 		this.speed = 5;
 		// Third-person camera configuration
 		this.cameraCoords = null;
@@ -212,6 +213,7 @@ class Player { //turn into class
 	}
 
 	moveWithAxis(horizontal, vertical) {
+		if (Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2)) > this.speed)
 		this.body.velocity.set(horizontal * this.speed, this.body.velocity.y, vertical * this.speed);
 	}
 
