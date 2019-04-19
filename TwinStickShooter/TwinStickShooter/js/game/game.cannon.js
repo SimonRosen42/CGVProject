@@ -171,8 +171,13 @@ window.game.cannon = function() {
 			if (body) {
 				_cannon.three.scene.remove(_cannon.getMeshFromBody(body));
 				_cannon.world.remove(body);
-				_cannon.visuals.splice(j,1);
-				_cannon.bodies.splice(j,1);
+				for (var i = _cannon.bodies.length - 1; i >= 0; i--) {
+					if (_cannon.bodies[i] == body) {
+						_cannon.visuals.splice(i,1);
+						_cannon.bodies.splice(i,1);
+						return;
+					}
+				}
 			}
 		},
 		removeAllVisuals: function() {

@@ -1,14 +1,78 @@
 window.game = window.game || {};
 
+class Weapon {
+	constructor(player, cannon) {
+		this.player = player;
+		this.cannon = cannon;
+		this.projectiles = [];
+		this.shootPosition = new CANNON.Vec3(0,0,0);
+		this.update();
+	}
+
+	update() {
+		this.player.body.pointToWorldFrame(new CANNON.Vec3(1,0,0), this.shootPosition);
+		for (var i = this.projectiles.length - 1; i >= 0; i--) {
+			this.projectiles[i].update();
+		}
+	}
+
+	removeProjectile(p) {
+		for (var i = this.projectiles.length - 1; i >= 0; i--) {
+			if (this.projectiles[i] == p) {
+				this.cannon.removeVisual(p.body);
+				this.projectiles.splice(i,1);
+				return;
+			}	
+		}
+	}
+
+	fire(cannon) {
+		console.log("fired");
+		this.projectiles.push(new Projectile(this, cannon));
+	}
+}
+
+class Projectile {
+	constructor(weapon, cannon) {
+		this.weapon = weapon;
+		this.speed = 5;
+		this.clock = new THREE.Clock();
+		this.clock.start();
+		this.body = cannon.createBody({
+			mass: 0,
+			position: {
+				x: weapon.shootPosition.x,
+				y: weapon.shootPosition.y,
+				z: weapon.shootPosition.z
+			},
+			meshMaterial: new THREE.MeshBasicMaterial({color: 0x010101}),
+			shape: new CANNON.Sphere(0.1),
+			material: cannon.solidMaterial
+		});
+		this.body.velocity.set(
+			(this.body.position.x - this.weapon.player.body.position.x)*this.speed,
+			(this.body.position.y - this.weapon.player.body.position.y)*this.speed,
+			(this.body.position.z - this.weapon.player.body.position.z)*this.speed
+		);
+	}
+
+	update() {
+		if (this.clock.getElapsedTime() > 1) {
+			this.weapon.removeProjectile(this);
+		}
+
+	}
+}
+
 class Player { //turn into class
 	constructor(controller) {
 		this.controller = controller;
+		this.weapon = null; //weapon holder
 		this.model = null;
 		this.mesh = null;
 		this.shape = null;
 		this.body = null;
-		this.shootPosition = new CANNON.Vec3(0,0,0);
-		this.projectiles = [];
+		this.lastRotation = null;
 		// Player mass which affects other rigid bodies in the world
 		this.mass = 3;
 		// HingeConstraint to limit player's air-twisting
@@ -83,6 +147,7 @@ class Player { //turn into class
 			castShadow: true
 		});
 		this.mesh = cannon.getMeshFromBody(this.body);
+		this.weapon = new Weapon(this, cannon);
 		//this.mesh.castShadow = true;
 		//this.mesh.receiveShadow = true;
 		// Create a HingeConstraint to limit player's air-twisting - this needs improvement
@@ -107,8 +172,8 @@ class Player { //turn into class
 
 	update(cannon,three,game,controllerHandler) {
 		// Basic game logic to update player and camera
-		this.body.pointToWorldFrame(new CANNON.Vec3(1,0,0), this.shootPosition);
 		this.processUserInput(cannon, controllerHandler);
+		this.weapon.update();
 		//this.updateCamera(three);
 		// Level-specific logic
 		
@@ -132,9 +197,15 @@ class Player { //turn into class
 
 	rotateOnAxis(horizontal, vertical, cannon) {
 		this.body.angularVelocity.y = 0;
-		if (horizontal == 0 && vertical == 0) return;
-		var polar = window.game.helpers.cartesianToPolar(horizontal,vertical);
-		cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), polar.angle);
+		if (this.lastRotation == null) {
+			this.lastRotation = window.game.helpers.cartesianToPolar(0,0);
+		}
+		if (horizontal == 0 && vertical == 0) {
+			cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), this.lastRotation.angle);
+		} else {
+			this.lastRotation = window.game.helpers.cartesianToPolar(horizontal,vertical);
+			cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), this.lastRotation.angle);
+		}
 	}
 
 	processUserInput(cannon, controllerHandler) {
@@ -142,29 +213,9 @@ class Player { //turn into class
 			this.moveWithAxis(this.controller.axes[this.axisCode.leftHorizontal],this.controller.axes[this.axisCode.leftVertical]);
 			this.rotateOnAxis(this.controller.axes[this.axisCode.rightHorizontal],this.controller.axes[this.axisCode.rightVertical],cannon);
 			if (this.controller.pressed[this.controllerCodes.cross]) {
-				this.fireProjectile(cannon);
+				this.weapon.fire(cannon);
 			}
 		}
-	}
-
-	fireProjectile(cannon) {
-		console.log("fired");
-		this.projectiles.push(cannon.createBody({
-			mass: 1,
-			position: {
-				x: this.shootPosition.x,
-				y: this.shootPosition.y,
-				z: this.shootPosition.z
-			},
-			meshMaterial: new THREE.MeshBasicMaterial({color: 0x010101}),
-			shape: new CANNON.Sphere(0.1),
-			material: cannon.solidMaterial
-		}));
-		this.projectiles[this.projectiles.length-1].velocity.set(
-			(this.projectiles[this.projectiles.length-1].position.x - this.body.position.x)*2,
-			(this.projectiles[this.projectiles.length-1].position.y - this.body.position.y)*2,
-			(this.projectiles[this.projectiles.length-1].position.z - this.body.position.z)*2
-		);
 	}
 
 	checkGameOver(game) {
