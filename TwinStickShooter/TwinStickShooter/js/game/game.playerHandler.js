@@ -100,7 +100,6 @@ class Player { //turn into class
 		this.isGrounded = false;
 		this.jumpHeight = 38;
 		// Configuration for player speed
-		this.acceleration = 5;
 		this.speed = 5;
 		// Third-person camera configuration
 		this.cameraCoords = null;
@@ -213,12 +212,13 @@ class Player { //turn into class
 	}
 
 	moveWithAxis(horizontal, vertical) {
-		if (Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2)) > this.speed)
+		//if (Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2)) > this.speed) {
 		this.body.velocity.set(horizontal * this.speed, this.body.velocity.y, vertical * this.speed);
+		//} else this.body.applyForce(new CANNON.Vec3(horizontal * this.acceleration * 100, 0, vertical * this.acceleration * 100), this.body.position);
 	}
 
 	rotateOnAxis(horizontal, vertical, cannon) {
-		this.body.angularVelocity.y = 0;
+		this.body.angularDamping = 0;
 		if (this.lastRotation == null) {
 			this.lastRotation = window.game.helpers.cartesianToPolar(0,0);
 		}
@@ -302,7 +302,6 @@ window.game.playerHandler = function () {
 			_playerHandler.game = g;
 			_playerHandler.controllerHandler = ch;
 			// Create a global physics material for the player which will be used as ContactMaterial for all other objects in the level
-			_playerHandler.cannon.playerPhysicsMaterial = new CANNON.Material("playerMaterial");
 			_playerHandler.ui = ui;
 			_playerHandler.enemyHandler = eh;
 		}

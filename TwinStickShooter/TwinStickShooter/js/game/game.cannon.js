@@ -20,13 +20,15 @@ window.game.cannon = function() {
 		// Default Z gravity (approximation of 9,806)
 		gravity: -10,
 		// Interval speed for Cannon.js to step the physics simulation
-		timestep: 1 / 8,
-		// Player physics material that will be assigned in game.core.js
+		timestep: 1 / 16,
+		// Player physics material 
 		playerPhysicsMaterial: null,
-		// Enemy physics material that will be assigned in game.core.js
+		// Enemy physics material 
 		enemyPhysicsMaterial: null,
 		// Solid material for all other level objects
 		solidMaterial: null,
+		// ground Material for ground
+		groundMaterial: null,
 		// Local storage of three
 		three: null,
 		//collision group settings in english (must be powers of 2 as it uses bitshifting)
@@ -46,8 +48,8 @@ window.game.cannon = function() {
 
             var solver = new CANNON.GSSolver();
 
-            _cannon.world.defaultContactMaterial.contactEquationStiffness = 1e9;
-            _cannon.world.defaultContactMaterial.contactEquationRelaxation = 4;
+            _cannon.world.defaultContactMaterial.contactEquationStiffness = 1e8;
+            _cannon.world.defaultContactMaterial.contactEquationRelaxation = 3;
 
             solver.iterations = 7;
             solver.tolerance = 0.1;
@@ -61,16 +63,23 @@ window.game.cannon = function() {
             _cannon.world.broadphase = new CANNON.NaiveBroadphase();
 
             // Create a slippery material (friction coefficient = 0.0)
-            var physicsMaterial = new CANNON.Material("slipperyMaterial");
-            _cannon.playerPhysicsMaterial = new CANNON.ContactMaterial(physicsMaterial,
-                                                                	   physicsMaterial,
-                                                                       0.0, // friction coefficient
-                                                                       0.0  // restitution
-                                                                       );
-            // We must add the contact materials to the world
-            _cannon.world.addContactMaterial(_cannon.playerPhysicsMaterial);
-            var solidsMaterial = new CANNON.Material("solidsMaterial");
-            _cannon.solidMaterial = _cannon.createPhysicsMaterial(solidsMaterial,0,0);
+            _cannon.groundMaterial = new CANNON.Material("groundMaterial");
+            _cannon.createPhysicsMaterial({
+            	material: _cannon.groundMaterial,
+            	friction: 0.4,
+            	restitution: 0.3,
+            	frictionEquation: true
+            });
+            _cannon.solidMaterial = new CANNON.Material("solidsMaterial");
+            _cannon.createPhysicsMaterial({
+            	material: _cannon.solidMaterial
+            });
+            _cannon.playerPhysicsMaterial = new CANNON.Material("playerPhysicsMaterial");
+            _cannon.createPhysicsMaterial({
+            	material: _cannon.playerPhysicsMaterial,
+            	friction: 0,
+            	restitution: 0
+            });
 		},
 
 		setup: function() {
@@ -96,7 +105,7 @@ window.game.cannon = function() {
 
 		createBody: function(options) {
 			// Creates a new rigid body based on specific options
-			var body  = new CANNON.Body({mass: options.mass, shape: options.shape/*, material: options.physicsMaterial */});
+			var body  = new CANNON.Body({mass: options.mass, shape: options.shape, material: options.material });
 			body.position.set(options.position.x, options.position.y, options.position.z);
 
 			// Apply a rotation if set by using Quaternions
@@ -161,13 +170,24 @@ window.game.cannon = function() {
 		//	else if (axis.z == 1) geometry.applyMatrix( new THREE.Matrix4().makeRotationZ( radians ) );
 		//},
 
-		createPhysicsMaterial: function(material, friction, restitution) {
+		createPhysicsMaterial: function(options) {
 			// Create a new material and add a Cannon ContactMaterial to the world always using _cannon.playerPhysicsMaterial as basis
-			var physicsMaterial = material || new CANNON.Material();
-			var contactMaterial = new CANNON.ContactMaterial(physicsMaterial, _cannon.playerPhysicsMaterial, friction || _cannon.friction, restitution || _cannon.restitution);
-
+			var physicsMaterial = options.material || new CANNON.Material();
+			var contactMaterial;
+			if (!options.frictionEquation) {
+				contactMaterial = new CANNON.ContactMaterial(_cannon.groundMaterial, physicsMaterial, {
+					friction: options.friction || _cannon.friction, 
+					restitution: options.restitution || _cannon.restitution,
+				});
+			} else {
+				contactMaterial = new CANNON.ContactMaterial(_cannon.groundMaterial, physicsMaterial, {
+					friction: options.friction || _cannon.friction, 
+					restitution: options.restitution || _cannon.restitution,
+            		frictionEquationStiffness: 1e8,
+            		frictionEquationRegularizationTime: 3
+				});
+			}
 			_cannon.world.addContactMaterial(contactMaterial);
-
 			return physicsMaterial;
 		},
 

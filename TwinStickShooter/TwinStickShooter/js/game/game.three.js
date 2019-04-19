@@ -39,7 +39,6 @@ window.game.three = function() {
            	_three.setupRenderer();
             window.addEventListener( 'resize', _three.onWindowResize, false );
             // floor
-            cannon.solidMaterial = cannon.playerPhysicsMaterial;
             cannon.createBody({
             	mass: 0,
             	shape: new CANNON.Plane(),
@@ -53,7 +52,7 @@ window.game.three = function() {
             	meshMaterial: new THREE.MeshLambertMaterial({ color: 0xdddddd }),
             	receiveShadow: true,
             	castShadow: false,
-            	material: cannon.solidMaterial,
+            	material: cannon.groundMaterial,
             	collisionGroup: cannon.collisionGroup.solids,
             	collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.player | cannon.collisionGroup.solids
             });

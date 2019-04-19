@@ -22,10 +22,7 @@ class Enemy {
 	}
 
 	create(cannon, three, pos) {
-
 		// function that creates an enemy character
-
-		cannon.enemyPhysicsMaterial = cannon.createPhysicsMaterial(new CANNON.Material("enemyMaterial"), 0.0, 0.0);
 		this.shape = new CANNON.Cylinder(1, 1, 3, 32);
 		//this.model = new THREE.CylinderGeometry(1, 1, 3, 32);
 		this.body = new cannon.createBody({
