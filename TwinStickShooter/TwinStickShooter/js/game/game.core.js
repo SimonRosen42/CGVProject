@@ -37,6 +37,9 @@ window.game.core = function () {
 			_game.loop();
 		},
 		loop: function() {
+			
+			var dt = _clock.getDelta();
+
 			// Assign an id to the animation frame loop
 			_animationFrameLoop =  window.requestAnimationFrame(_game.loop);
 			_controllerHandler.updateStatus();
@@ -44,7 +47,7 @@ window.game.core = function () {
 			_cannon.updatePhysics();
 			_playerHandler.updatePlayers();
 			//_game.enemy.update();
-			_enemyHandler.updateEnemies();
+			_enemyHandler.updateEnemies(dt);
 			// Render visual scene
 			_three.render();
 		},
@@ -63,6 +66,10 @@ window.game.core = function () {
 			_three.init(_cannon, options);
 			_ui.init();
 			_events.init();
+
+			_clock = new THREE.Clock(true);
+			_clock.start();
+			
 			_controllerHandler.init(_playerHandler);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui,_enemyHandler);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
@@ -115,6 +122,8 @@ window.game.core = function () {
 	var _animationFrameLoop;
 	var _enemyHandler;
 	var _playerHandler;
+
+	var _clock;
 
 	return _game;
 };

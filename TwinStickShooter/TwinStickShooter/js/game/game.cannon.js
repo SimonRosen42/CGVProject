@@ -120,25 +120,34 @@ window.game.cannon = function() {
 				}
 			}
 
+
+
 			//create visual mesh
 			var mesh = null;
 			if (options.meshMaterial) {
-				if (!options.geometry) {
-					var shape = body.shapes[0];
-					mesh = _cannon.shape2mesh(shape, options.meshMaterial);
+				if (options.mesh) {
+					mesh = options.mesh;
 				} else {
-					mesh = new THREE.Mesh(options.geometry, options.meshMaterial);
+					if (options.geometry == null) {
+						 var shape = body.shapes[0];
+						 mesh = _cannon.shape2mesh(shape, options.meshMaterial);
+					} else {
+						mesh = new THREE.Mesh(options.geometry, options.meshMaterial);
+					}
 				}
 			} else {
 				console.error("Cannot create mesh without material");
 				return;
 			}
+
 			mesh.position.set(options.position.x, options.position.y, options.position.z);
 			if (options.receiveShadow) mesh.receiveShadow = options.receiveShadow;
 			if (options.castShadow) mesh.castShadow = options.castShadow;
+			
+			
 			// Add the entity to the scene and world
-
 			_cannon.addVisual(body, mesh);
+			
 			return body;
 		},
 
