@@ -5,7 +5,11 @@ class Weapon {
 		this.player = player;
 		this.cannon = cannon;
 		this.projectiles = [];
+		this.numProjectiles = 0;
 		this.shootPosition = new CANNON.Vec3(0,0,0);
+		this.fireRate = 1;
+		this.fireRateClock = new THREE.Clock();
+		this.fireRateClock.start();
 		this.update();
 	}
 
@@ -18,28 +22,34 @@ class Weapon {
 
 	removeProjectile(p) {
 		for (var i = this.projectiles.length - 1; i >= 0; i--) {
-			if (this.projectiles[i] == p) {
+			if (this.projectiles[i].index == p.index) {
 				this.cannon.removeVisual(p.body);
 				this.projectiles.splice(i,1);
+				this.numProjectiles--;
 				return;
 			}	
 		}
 	}
 
 	fire(cannon) {
-		console.log("fired");
-		this.projectiles.push(new Projectile(this, cannon));
+		if (this.fireRateClock.getElapsedTime() > this.fireRate) {
+			this.projectiles.push(new Projectile(this, cannon, this.numProjectiles));
+			this.numProjectiles++;
+			this.fireRateClock.start();
+		}
 	}
 }
 
 class Projectile {
-	constructor(weapon, cannon) {
+	constructor(weapon, cannon, i) {
 		this.weapon = weapon;
-		this.speed = 5;
+		this.speed = 10;
+		this.damage = 2;
 		this.clock = new THREE.Clock();
+		this.index = i;
 		this.clock.start();
 		this.body = cannon.createBody({
-			mass: 0.01,
+			mass: 1,
 			position: {
 				x: weapon.shootPosition.x,
 				y: weapon.shootPosition.y,
@@ -49,32 +59,66 @@ class Projectile {
 			shape: new CANNON.Sphere(0.1),
 			material: cannon.solidMaterial,
 			collisionGroup: cannon.collisionGroup.projectile,
-			collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
+			collisionFilter: cannon.collisionGroup.solids // | cannon.collisionGroup.enemy 
 		});
 		this.body.velocity.set(
-			(this.body.position.x - this.weapon.player.body.position.x)*this.speed,
-			(this.body.position.y - this.weapon.player.body.position.y)*this.speed,
-			(this.body.position.z - this.weapon.player.body.position.z)*this.speed
+			(this.body.position.x - weapon.player.body.position.x)*this.speed,
+			0,
+			(this.body.position.z - weapon.player.body.position.z)*this.speed
 		);
-		this.body.addEventListener("collide", function(e){			
-			var enemy = weapon.player.enemyHandler.getEnemyFromBody(e.body);
-				if (enemy != null) {
-					enemy.takeDamage(2);
-				//setTimeout(function() { //have to set timeout or else removes body before end of physics frame
-          		//	console.log("collided with ", enemy);
-          		//	weapon.player.enemyHandler.removeEnemy(enemy);
-    			//}, 0);
-				}
+		//console.log(cannon.world.raycastClosest(from, to, raycastOptions, result));
+		//console.log(result.body.position);
+		this.body.addEventListener("collide", function(e){		
+			if (e.body.collisionFilterGroup == cannon.collisionGroup.solids) {
+				setTimeout(function() {
+					weapon.removeProjectile(this);
+				}, 0);
+			}	
+		//	var enemy = weapon.player.enemyHandler.getEnemyFromBody(e.body);
+		//		if (enemy != null) {
+		//			enemy.takeDamage(2);
+		//			weapon.removeProjectile(this);
+		//		//setTimeout(function() { //have to set timeout or else removes body before end of physics frame
+        //  		//	console.log("collided with ", enemy);
+        //  		//	weapon.player.enemyHandler.removeEnemy(enemy);
+    	//		//}, 0);
+		//		}
 		});
 	}
 
 	update() {
+		this.body.position.set(
+			this.body.position.x,
+			this.weapon.shootPosition.y,
+			this.body.position.z
+		);
 		this.body.velocity.set(
 			this.body.velocity.x,
 			0,
 			this.body.velocity.z
 		);
-		if (this.clock.getElapsedTime() > 1) {
+		var from = this.body.position;
+		var distance = 3 - this.clock.getElapsedTime();
+		var to = new CANNON.Vec3(from.x + this.body.velocity.x * distance, from.y, from.z + this.body.velocity.z * distance);
+		var result = new CANNON.RaycastResult();
+		var raycastOptions = {
+			collisionFilterGroup: this.weapon.cannon.collisionGroup.projectile,
+			collisionFilterMask: this.weapon.cannon.collisionGroup.enemy //| this.weapon.cannon.collisionGroup.solids
+		};
+		this.weapon.cannon.world.raycastClosest(from, to, raycastOptions, result);
+		if (result.body){
+			if (result.body.collisionFilterGroup == this.weapon.cannon.collisionGroup.enemy) {
+				console.log(this.body.position.distanceTo(result.body.position));
+				if (this.body.position.distanceTo(result.body.position) < result.body.shapes[0].boundingSphereRadius + this.body.shapes[0].boundingSphereRadius) {
+					var enemy = this.weapon.player.enemyHandler.getEnemyFromBody(result.body);
+					if (enemy != null) {
+						enemy.takeDamage(this.damage);
+						this.weapon.removeProjectile(this);
+					}
+				}
+			}
+		}
+		if (this.clock.getElapsedTime() > 3) {
 			this.weapon.removeProjectile(this);
 		}
 
@@ -234,7 +278,7 @@ class Player { //turn into class
 		if (this.controller != null) { //controller connected
 			this.moveWithAxis(this.controller.axes[this.axisCode.leftHorizontal],this.controller.axes[this.axisCode.leftVertical]);
 			this.rotateOnAxis(this.controller.axes[this.axisCode.rightHorizontal],this.controller.axes[this.axisCode.rightVertical],cannon);
-			if (this.controller.pressed[this.controllerCodes.cross]) {
+			if (this.controller.pressed[this.controllerCodes.R1]) {
 				this.weapon.fire(cannon);
 			}
 		}

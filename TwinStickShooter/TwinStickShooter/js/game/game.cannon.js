@@ -80,6 +80,12 @@ window.game.cannon = function() {
             	friction: 0,
             	restitution: 0
             });
+            _cannon.enemyPhysicsMaterial = new CANNON.Material("enemyMaterial");
+            _cannon.createPhysicsMaterial({
+            	material: _cannon.enemyPhysicsMaterial,
+            	friction: 0,
+            	restitution: 0
+            });
 		},
 
 		setup: function() {

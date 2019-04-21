@@ -23,7 +23,7 @@ class Enemy {
 
 	create(cannon, three, pos) {
 		// function that creates an enemy character
-		this.shape = new CANNON.Cylinder(1, 1, 3, 32);
+		this.shape = new CANNON.Sphere(1);
 		//this.model = new THREE.CylinderGeometry(1, 1, 3, 32);
 		this.body = new cannon.createBody({
 			mass: this.mass, 
@@ -38,7 +38,7 @@ class Enemy {
 			//geometry: this.model
 			castShadow: true,
 			collisionGroup: cannon.collisionGroup.enemy,
-			collisionFilter: cannon.collisionGroup.player | cannon.collisionGroup.solids | cannon.collisionGroup.projectile
+			collisionFilter: cannon.collisionGroup.player | cannon.collisionGroup.solids | cannon.collisionGroup.enemy | cannon.collisionGroup.projectile
 		});
 		
 		//enemy.userData.model = window.game.core._three
