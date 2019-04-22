@@ -70,7 +70,9 @@ class Enemy {
 		var loader = new THREE.GLTFLoader();
 
 	    this.shape = new CANNON.Box(new CANNON.Vec3(0.75,2,0.75));
-	    this.lastAngle = window.game.helpers.cartesianToPolar(0,0).angle;
+	    var rand1 = Math.random() * 2 -1;
+	    var rand2 = Math.random() * 2 -1;
+	    this.lastAngle = window.game.helpers.cartesianToPolar(rand1,rand2).angle;
 	    var self = this;
 	    loader.load(gltfFilePath, 
 	    	function(gltf) {

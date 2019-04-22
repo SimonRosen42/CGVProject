@@ -7,9 +7,18 @@ class Weapon {
 		this.projectiles = [];
 		this.numProjectiles = 0;
 		this.shootPosition = new CANNON.Vec3(0,0,0);
-		this.fireRate = 1;
+
+		this.fireRate = 0.2;
 		this.fireRateClock = new THREE.Clock();
 		this.fireRateClock.start();
+
+		this.reloadRate = 1;
+		this.reloadRateClock = new THREE.Clock();
+		this.reloading = false;
+
+		this.magazineMax = 8;
+		this.magazine = this.magazineMax;
+
 		this.update();
 	}
 
@@ -17,6 +26,11 @@ class Weapon {
 		this.player.body.pointToWorldFrame(new CANNON.Vec3(1,0,0), this.shootPosition);
 		for (var i = this.projectiles.length - 1; i >= 0; i--) {
 			this.projectiles[i].update();
+		}
+
+		if (this.reloadRateClock.getElapsedTime() > this.reloadRate && this.reloading) {
+			this.reloading = false;
+			this.magazine = this.magazineMax;
 		}
 	}
 
@@ -32,10 +46,17 @@ class Weapon {
 	}
 
 	fire(cannon) {
-		if (this.fireRateClock.getElapsedTime() > this.fireRate) {
-			this.projectiles.push(new Projectile(this, cannon, this.numProjectiles));
-			this.numProjectiles++;
-			this.fireRateClock.start();
+		if (!this.reloading) {
+			if (this.fireRateClock.getElapsedTime() > this.fireRate) {
+				this.projectiles.push(new Projectile(this, cannon, this.numProjectiles));
+				this.numProjectiles++;
+				this.fireRateClock.start();
+				this.magazine--;
+				if (this.magazine <= 0) {
+					this.reloading = true;
+					this.reloadRateClock.start();
+				}
+			}	
 		}
 	}
 }
@@ -137,13 +158,9 @@ class Player { //turn into class
 		this.lastRotation = null;
 		// Player mass which affects other rigid bodies in the world
 		this.mass = 3;
-		// HingeConstraint to limit player's air-twisting
-		this.orientationConstraint = null;
-		// Jump flags
-		this.isGrounded = false;
-		this.jumpHeight = 38;
 		// Configuration for player speed
 		this.speed = 5;
+		this.health = 10;
 		// Third-person camera configuration
 		this.cameraCoords = null;
 		// Camera offsets behind the player (horizontally and vertically)
@@ -284,7 +301,10 @@ class Player { //turn into class
 	}
 
 	takeDamage() {
-		console.log("take damage");
+		this.health--;
+		if (this.health <= 0) {
+			console.log("dead");
+		}
 	}
 
 	checkGameOver(game) {
