@@ -1,6 +1,27 @@
 
 window.game = window.game || {}
 
+// enum of enemy animations
+// maps keys to indices
+var enemyAnimation = {
+	ATTACK1_L : 0,
+	ATTACK1_R : 1,
+	ATTACK2 : 2,
+	ATTACK3 : 3,
+	DEAD1 : 4,
+	DEAD2 : 5,
+	DEAD3 : 6,
+	ENTER : 7,
+	HURT1 : 8,
+	HURT2 : 9,
+	HURT_HEAD : 10,
+	HURT_L : 11,
+	HURT_R : 12,
+	IDLE : 13,
+	RUN : 14,
+	WALK : 15
+}
+
 class Enemy {
 
 	// // keeps track of players
@@ -19,6 +40,12 @@ class Enemy {
 		this.index = i;
 		this.health = 10;
 		this.mixer = null;
+
+		this.hasLoaded = false;
+
+		this.currentAnimation = null;
+		this.currentAction = null;
+		this.animations = [];
 		//enemy.rotation = rotation;
 		
 	}
@@ -32,43 +59,56 @@ class Enemy {
 	    var self = this;
 	    loader.load(gltfFilePath, function(gltf) {
 
-    	gltf.scene.scale.set(0.5,0.5,0.5)
+	    	gltf.scene.scale.set(0.5,0.5,0.5);
 
-		self.model = gltf.scene; 
+			self.model = gltf.scene; 
 
-		self.mixer = new THREE.AnimationMixer(self.model);
-		var clip1 = gltf.animations[15];
-		var action1 = self.mixer.clipAction(clip1);
-		action1.play();
-			// self.model.setScale(0.2, 0.2, 0.2);
+			// set mixer for animations and load animationa
+			self.mixer = new THREE.AnimationMixer(self.model);
+			for (var i = 0; i < gltf.animations.length; i++)
+				self.animations.push(gltf.animations[i]);
 
-			//this.model = modelTemp;
+			// using animations example
+			self.switchCurrentAnimation(enemyAnimation.WALK);
+			self.playCurrentAnimation();
+		
+			self.body = new cannon.createBody({
+				shape: self.shape,
+		    	mesh: self.model, 
+				material: cannon.enemyPhysicsMaterial,
+				meshMaterial: new THREE.MeshLambertMaterial({color : 0xff0000}),
+				position: {
+					x: pos.x,
+					y: pos.y,
+					z: pos.z
+				},
+				castShadow: true,
+				collisionGroup: cannon.collisionGroup.enemy,
+				collisionFilter: cannon.collisionGroup.player | cannon.collisionGroup.solids | cannon.collisionGroup.enemy | cannon.collisionGroup.projectile
+			});
 
-			//      this.shape = modelTemp;
+			self.hasLoaded = true;
 
-		self.body = new cannon.createBody({
-			shape: self.shape, 
-			mesh: self.model,
-			material: cannon.enemyPhysicsMaterial,
-			meshMaterial: new THREE.MeshLambertMaterial({color : 0xff0000}),
-			position: {
-				x: pos.x,
-				y: pos.y,
-				z: pos.z
-			},
-			castShadow: true,
-			collisionGroup: cannon.collisionGroup.enemy,
-			collisionFilter: cannon.collisionGroup.player | cannon.collisionGroup.solids | cannon.collisionGroup.enemy | cannon.collisionGroup.projectile
-		});
-
-			//enemy.userData.model = window.game.core._three
-		self.mesh = cannon.getMeshFromBody(self.body);
+			self.mesh = cannon.getMeshFromBody(self.body);
 
 	    })
 
 		// this.body.addEventListener("collide", function(event) {
 
 		// } );
+	}
+
+	switchCurrentAnimation(animationEnumKey) {
+		this.currentAnimation = this.animations[animationEnumKey];
+	}
+
+	playCurrentAnimation() {
+		this.currentAction = this.mixer.clipAction(this.currentAnimation);
+		this.currentAction.play();
+	}
+
+	stopCurrentAnimation() {
+		this.currentAction.stop();
 	}
 
 	takeDamage(damage) {
@@ -82,37 +122,42 @@ class Enemy {
 
 	update(playerHandler, dt) {
 
-		if (this.mixer != null)
-			this.mixer.update(dt);
+		if (this.hasLoaded) {
+		
+			if (this.mixer != null)
+				this.mixer.update(dt);
 
-		// utility function to find the straight line distance between two points
-		// in a 3D space
-		var getStraightLineDistance = function(positionA, positionB) {
-			return Math.sqrt(Math.pow((positionA.x - positionB.x), 2) + Math.pow((positionA.y - positionB.y), 2) + Math.pow((positionA.z - positionB.z), 2))
-		}
 
-		if (this.position != null) {
-			// find index of player that's closest to the enemy
-			var min = 10000000;
-			var minPlayerIndex = -1;
-			for (var i = 0; i < playerHandler.player.length; i++) {
-				var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
-				if (currDistance < min) {
-					min = currDistance;
-					minPlayerIndex = i;
+			// utility function to find the straight line distance between two points
+			// in a 3D space
+			var getStraightLineDistance = function(positionA, positionB) {
+				return Math.sqrt(Math.pow((positionA.x - positionB.x), 2) + Math.pow((positionA.y - positionB.y), 2) + Math.pow((positionA.z - positionB.z), 2))
+			}
+
+			//if (this.body != null && this.body.position != null) {
+				// find index of player that's closest to the enemy
+				var min = 10000000;
+				var minPlayerIndex = -1;
+				for (var i = 0; i < playerHandler.player.length; i++) {
+					var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
+					if (currDistance < min) {
+						min = currDistance;
+						minPlayerIndex = i;
+					}
 				}
-			}
-			if (playerHandler.player[minPlayerIndex] != null) {
-				var closestPlayer = playerHandler.player[minPlayerIndex];
-				var closestPlayerPosition = closestPlayer.body.position;
-				var v = new CANNON.Vec3(closestPlayerPosition.x - this.body.position.x, 0, closestPlayerPosition.z - this.body.position.z);
-				var magnitude = Math.sqrt(Math.pow(v.x,2)+Math.pow(v.y,2)+Math.pow(v.z,2));
-				var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
-				direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
-				this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
-			}
 
-		}
+				if (playerHandler.player[minPlayerIndex] != null) {
+					var closestPlayer = playerHandler.player[minPlayerIndex];
+					var closestPlayerPosition = closestPlayer.body.position;
+					var v = new CANNON.Vec3(closestPlayerPosition.x - this.body.position.x, 0, closestPlayerPosition.z - this.body.position.z);
+					var magnitude = Math.sqrt(Math.pow(v.x,2)+Math.pow(v.y,2)+Math.pow(v.z,2));
+					var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
+					direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
+					this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
+				}
+
+			}
+		//}
 
 	};
 
@@ -132,7 +177,7 @@ window.game.enemyHandler = function() {
 		addEnemy: function(position) {
 			var enemy = new Enemy(_enemyHandler.numEnemies);
 
-			var filePath = "models/zombieee.gltf";
+			var filePath = "models/zombie.gltf";
 			enemy.create(_enemyHandler.cannon, _enemyHandler.three, position, filePath);
 			_enemyHandler.enemies.push(enemy);
 			_enemyHandler.numEnemies++;
