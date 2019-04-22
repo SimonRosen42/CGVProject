@@ -283,6 +283,10 @@ class Player { //turn into class
 		}
 	}
 
+	takeDamage() {
+		console.log("take damage");
+	}
+
 	checkGameOver(game) {
 		// Example game over mechanism which resets the game if the player is falling beneath -800
 		if (this.mesh.position.y <= -10) {
