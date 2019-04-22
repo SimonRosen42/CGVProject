@@ -22,6 +22,12 @@ var enemyAnimation = {
 	WALK : 15
 }
 
+var enemyState = {
+	IDLE : 0,
+	WALK : 1,
+
+}
+
 class Enemy {
 
 	// // keeps track of players
@@ -33,6 +39,7 @@ class Enemy {
 		this.mass = 3,
 		this.speed = 1,
 		this.speedMax = 30, // Enemy mass which affects other rigid bodies in the world
+		this.lastAngle = null;
 		this.body = null;
 		// Enemy entity including mesh and rigid body
 		this.model = null; 
@@ -42,6 +49,7 @@ class Enemy {
 		this.mixer = null;
 
 		this.hasLoaded = false;
+		this.state = null;
 
 		this.currentAnimation = null;
 		this.currentAction = null;
@@ -54,25 +62,42 @@ class Enemy {
 		// function that creates an enemy character
 		var loader = new THREE.GLTFLoader();
 
-	    this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1));
+	    this.shape = new CANNON.Box(new CANNON.Vec3(0.75,2,0.75));
 
 	    var self = this;
-	    loader.load(gltfFilePath, function(gltf) {
+	    loader.load(gltfFilePath, 
+	    	function(gltf) {
 
 	    	gltf.scene.scale.set(0.5,0.5,0.5);
 
 			self.model = gltf.scene; 
+			gltf.scene.traverse( function( node ) {
+
+        		if ( node instanceof THREE.Mesh ) { 
+        			node.castShadow = true; 
+        			node.receiveShadow = true;
+        			self.model = node.parent;
+        			self.model.scale.set(2,2,2);
+        		}
+
+   			 });
 
 			// set mixer for animations and load animationa
 			self.mixer = new THREE.AnimationMixer(self.model);
+
 			for (var i = 0; i < gltf.animations.length; i++)
 				self.animations.push(gltf.animations[i]);
 
 			// using animations example
-			self.switchCurrentAnimation(enemyAnimation.WALK);
-			self.playCurrentAnimation();
-		
+			self.switchCurrentAnimation(enemyAnimation.ENTER , true);
+			//self.playCurrentAnimation();
+			self.mixer.addEventListener( 'finished', function( e ) { 
+				if (self.currentAnimation == self.animations[enemyAnimation.ENTER]) {
+					self.switchCurrentAnimation(enemyAnimation.IDLE);
+				} else self.currentAnimation = null;
+			})
 			self.body = new cannon.createBody({
+				mass: self.mass,
 				shape: self.shape,
 		    	mesh: self.model, 
 				material: cannon.enemyPhysicsMaterial,
@@ -83,6 +108,7 @@ class Enemy {
 					z: pos.z
 				},
 				castShadow: true,
+				offset: new CANNON.Vec3(0,+2,0), //corrective offset for the model
 				collisionGroup: cannon.collisionGroup.enemy,
 				collisionFilter: cannon.collisionGroup.player | cannon.collisionGroup.solids | cannon.collisionGroup.enemy | cannon.collisionGroup.projectile
 			});
@@ -91,20 +117,43 @@ class Enemy {
 
 			self.mesh = cannon.getMeshFromBody(self.body);
 
-	    })
+	    	},function ( xhr ) {
+
+				console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+			},function ( error ) {
+
+				console.log( 'An error happened' );
+
+			}
+		);
 
 		// this.body.addEventListener("collide", function(event) {
 
 		// } );
 	}
 
-	switchCurrentAnimation(animationEnumKey) {
-		this.currentAnimation = this.animations[animationEnumKey];
+	switchCurrentAnimation(animationEnumKey, once) {
+		if (this.currentAnimation != this.animations[animationEnumKey]) {
+			if (this.currentAnimation != null) this.stopCurrentAnimation();
+			this.currentAnimation = this.animations[animationEnumKey];
+			if (once)
+				this.playCurrentAnimationOnce();
+			else this.playCurrentAnimation();
+		}
 	}
 
 	playCurrentAnimation() {
 		this.currentAction = this.mixer.clipAction(this.currentAnimation);
 		this.currentAction.play();
+	}
+
+	playCurrentAnimationOnce() {
+		this.currentAction = this.mixer.clipAction(this.currentAnimation);
+		this.currentAction.loop = THREE.LoopOnce;
+		this.currentAction.enabled = true;
+		this.currentAction.clampWhenFinished = false;
+		this.currentAction.play().reset();
 	}
 
 	stopCurrentAnimation() {
@@ -113,6 +162,7 @@ class Enemy {
 
 	takeDamage(damage) {
 		this.health -= damage;
+		this.switchCurrentAnimation(enemyAnimation.HURT1, true);
 	}
 
 	destroy(cannon) {
@@ -126,8 +176,6 @@ class Enemy {
 		
 			if (this.mixer != null)
 				this.mixer.update(dt);
-
-
 			// utility function to find the straight line distance between two points
 			// in a 3D space
 			var getStraightLineDistance = function(positionA, positionB) {
@@ -136,17 +184,18 @@ class Enemy {
 
 			//if (this.body != null && this.body.position != null) {
 				// find index of player that's closest to the enemy
-				var min = 10000000;
-				var minPlayerIndex = -1;
-				for (var i = 0; i < playerHandler.player.length; i++) {
-					var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
-					if (currDistance < min) {
-						min = currDistance;
-						minPlayerIndex = i;
-					}
+			var min = 10000000;
+			var minPlayerIndex = -1;
+			for (var i = 0; i < playerHandler.player.length; i++) {
+				var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
+				if (currDistance < min) {
+					min = currDistance;
+					minPlayerIndex = i;
 				}
+			}
 
-				if (playerHandler.player[minPlayerIndex] != null) {
+			if (playerHandler.player[minPlayerIndex] != null) {
+				if (this.currentAnimation != this.animations[enemyAnimation.HURT1]) {
 					var closestPlayer = playerHandler.player[minPlayerIndex];
 					var closestPlayerPosition = closestPlayer.body.position;
 					var v = new CANNON.Vec3(closestPlayerPosition.x - this.body.position.x, 0, closestPlayerPosition.z - this.body.position.z);
@@ -154,12 +203,21 @@ class Enemy {
 					var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
 					direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
 					this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
+					this.lastAngle = window.game.helpers.cartesianToPolar(direction.x,-1*direction.z).angle - Math.PI/2;
+					this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
+					this.switchCurrentAnimation(enemyAnimation.WALK, false);
+				} else {
+					this.body.velocity = new CANNON.Vec3(0,0,0);
+					this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
 				}
-
+			} else {
+				this.body.velocity.set(0,0,0);
 			}
+
+		}
 		//}
 
-	};
+	}
 
 }
 

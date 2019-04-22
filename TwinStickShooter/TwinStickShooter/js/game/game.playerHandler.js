@@ -108,7 +108,6 @@ class Projectile {
 		this.weapon.cannon.world.raycastClosest(from, to, raycastOptions, result);
 		if (result.body){
 			if (result.body.collisionFilterGroup == this.weapon.cannon.collisionGroup.enemy) {
-				console.log(this.body.position.distanceTo(result.body.position));
 				if (this.body.position.distanceTo(result.body.position) < result.body.shapes[0].boundingSphereRadius + this.body.shapes[0].boundingSphereRadius) {
 					var enemy = this.weapon.player.enemyHandler.getEnemyFromBody(result.body);
 					if (enemy != null) {

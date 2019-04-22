@@ -151,7 +151,7 @@ window.game.three = function() {
 			_three.camera.aspect = window.innerWidth / window.innerHeight;
 			_three.camera.updateProjectionMatrix();
 			_three.renderer.setSize(window.innerWidth, window.innerHeight);
-		},
+		}
 		//loadModel: function(url) {
 		//	var loader = new THREE.GLTFLoader();
 		//	loader.load(url, function (gltf){
@@ -167,11 +167,11 @@ window.game.three = function() {
 		//},
 		//createModel: function(jsonData, scale, materials, isGeometry) {
 		//	// Variables for JSONLoader and imported model data
-		//	var loader;
-		//	var jsonModel;
+		//	var loader = new THREE.GLTFLoader();
+		//	var gltfModel;
 		//	var meshMaterial;
 		//	var model = {};
-//
+////
 		//	_three.loadModel('models/solder1.glb');
 			// Create the Cannon.js geometry for the imported 3D model
 			//_three.createCannonGeometry(jsonModel.geometry, scale);

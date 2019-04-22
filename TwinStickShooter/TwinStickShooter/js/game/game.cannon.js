@@ -146,6 +146,7 @@ window.game.cannon = function() {
 				return;
 			}
 
+			if (options.offset) body.shapeOffsets = [options.offset];
 			mesh.position.set(options.position.x, options.position.y, options.position.z);
 			if (options.receiveShadow) mesh.receiveShadow = options.receiveShadow;
 			if (options.castShadow) mesh.castShadow = options.castShadow;
