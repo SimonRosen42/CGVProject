@@ -60,6 +60,7 @@ window.game.core = function () {
 			_controllerHandler = window.game.controllerHandler();
 			_enemyHandler = window.game.enemyHandler();
 			_playerHandler = window.game.playerHandler();
+			_levelHandler = window.game.levelHandler(); //my new code
 
 			// Initialize components with options
 			_cannon.init(_three);
@@ -122,6 +123,7 @@ window.game.core = function () {
 	var _animationFrameLoop;
 	var _enemyHandler;
 	var _playerHandler;
+	var _levelHandler;
 
 	var _clock;
 
