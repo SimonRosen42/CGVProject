@@ -37,7 +37,7 @@ window.game.core = function () {
 			_game.loop();
 		},
 		loop: function() {
-			
+
 			var dt = _clock.getDelta();
 
 			// Assign an id to the animation frame loop
@@ -50,6 +50,12 @@ window.game.core = function () {
 			_enemyHandler.updateEnemies(dt);
 			// Render visual scene
 			_three.render();
+
+			// for (var i = 0; i < _three.materialArray.length; i++) {
+			// 	_three.materialArray.displacementScale = 200;
+			// 	_three.materialArray.map.needsUpdate = true;
+			// 	_three.materialArray.displacementMap.needsUpdate = true;
+			// }
 		},
 		initComponents: function (options) {
 			// Reference game components one time
@@ -69,7 +75,7 @@ window.game.core = function () {
 
 			_clock = new THREE.Clock(true);
 			_clock.start();
-			
+
 			_controllerHandler.init(_playerHandler);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui,_enemyHandler);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);

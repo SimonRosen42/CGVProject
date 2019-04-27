@@ -41,7 +41,7 @@ class Weapon {
 				this.projectiles.splice(i,1);
 				this.numProjectiles--;
 				return;
-			}	
+			}
 		}
 	}
 
@@ -56,7 +56,7 @@ class Weapon {
 					this.reloading = true;
 					this.reloadRateClock.start();
 				}
-			}	
+			}
 		}
 	}
 }
@@ -80,7 +80,7 @@ class Projectile {
 			shape: new CANNON.Sphere(0.1),
 			material: cannon.solidMaterial,
 			collisionGroup: cannon.collisionGroup.projectile,
-			collisionFilter: cannon.collisionGroup.solids // | cannon.collisionGroup.enemy 
+			collisionFilter: cannon.collisionGroup.solids // | cannon.collisionGroup.enemy
 		});
 		this.body.velocity.set(
 			(this.body.position.x - weapon.player.body.position.x)*this.speed,
@@ -89,12 +89,12 @@ class Projectile {
 		);
 		//console.log(cannon.world.raycastClosest(from, to, raycastOptions, result));
 		//console.log(result.body.position);
-		this.body.addEventListener("collide", function(e){		
+		this.body.addEventListener("collide", function(e){
 			if (e.body.collisionFilterGroup == cannon.collisionGroup.solids) {
 				setTimeout(function() {
 					weapon.removeProjectile(this);
 				}, 0);
-			}	
+			}
 		//	var enemy = weapon.player.enemyHandler.getEnemyFromBody(e.body);
 		//		if (enemy != null) {
 		//			enemy.takeDamage(2);
@@ -146,7 +146,9 @@ class Projectile {
 }
 
 class Player { //turn into class
-	constructor(controller, enemyHandler) {
+	constructor(controller, enemyHandler, index) {
+
+		this.index = index;
 		this.controller = controller;
 		this.weapon = null; //weapon holder
 		this.enemyHandler = enemyHandler;
@@ -154,6 +156,7 @@ class Player { //turn into class
 		this.mesh = null;
 		this.shape = null;
 		this.body = null;
+		this.model = null;
 		//lastRotation to keep player from rolling around
 		this.lastRotation = null;
 		// Player mass which affects other rigid bodies in the world
@@ -161,6 +164,12 @@ class Player { //turn into class
 		// Configuration for player speed
 		this.speed = 5;
 		this.health = 10;
+
+		// animation variables
+		this.mixer = null;
+		this.walkingAnimation = null;
+		this.walkingAction = null;
+
 		// Third-person camera configuration
 		this.cameraCoords = null;
 		// Camera offsets behind the player (horizontally and vertically)
@@ -201,6 +210,8 @@ class Player { //turn into class
 			rightHorizontal : 2,
 			rightVertical : 3
 		};
+
+		this.hasLoaded = false;
 	}
 		// Methods
 	create(cannon, three) {
@@ -210,24 +221,60 @@ class Player { //turn into class
 		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
 		//]);
 		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
+
+
 		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
-		this.body = cannon.createBody({
-			//geometry: this.model,
-			position: {
-				x: 0,
-				y: 1,
-				z: 0
-			},
-			meshMaterial: new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}),
-			mass: this.mass, 
-			shape: this.shape, 
-			material: cannon.playerPhysicsMaterial,
-			castShadow: true,
-			collisionGroup: cannon.collisionGroup.player,
-			collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
-		});
-		this.mesh = cannon.getMeshFromBody(this.body);
-		this.weapon = new Weapon(this, cannon);
+
+		var loader = new THREE.GLTFLoader();
+		var filePath =  "models/player" + this.index.toString() + ".glb";
+		console.log(filePath);
+		var self = this;
+		loader.load(filePath, function (gltf) {
+
+	   	gltf.scene.scale.set(0.75,0.75,0.75);
+
+			self.model = gltf.scene;
+
+			// gltf.scene.traverse( function( node ) {
+			//
+      //   		if ( node instanceof THREE.Mesh ) {
+      //   			node.castShadow = true;
+      //   			node.receiveShadow = true;
+      //   			self.model = node.parent;
+      //   			self.model.scale.set(2,2,2);
+      //   		}
+			//
+   		// 	 });
+
+			// set mixer for animations
+			self.mixer = new THREE.AnimationMixer(self.model);
+
+			// set walk animation
+			self.walkingAnimation = gltf.animations[0];
+
+			self.body = cannon.createBody({
+				//geometry: this.model,
+				position: {
+					x: 0,
+					y: 1,
+					z: 0
+				},
+				meshMaterial: new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}),
+				mass: self.mass,
+				mesh: self.model,
+				shape: self.shape,
+				material: cannon.playerPhysicsMaterial,
+				castShadow: true,
+				collisionGroup: cannon.collisionGroup.player,
+				collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
+			});
+
+			self.mesh = cannon.getMeshFromBody(self.body);
+			self.weapon = new Weapon(self, cannon);
+
+			self.hasLoaded = true;
+		})
+
 		//this.mesh.castShadow = true;
 		//this.mesh.receiveShadow = true;
 		// Create a HingeConstraint to limit player's air-twisting - this needs improvement
@@ -245,19 +292,40 @@ class Player { //turn into class
 		// });
 	}
 
+	playWalkingAnimation() {
+		this.currentAction = this.mixer.clipAction(this.walkingAnimation);
+		this.currentAction.loop = THREE.LoopRepeat;
+		this.currentAction.play();
+	}
+
+	playWalkingAnimationOnce() {
+		this.currentAction = this.mixer.clipAction(this.walkingAnimation);
+		this.currentAction.loop = THREE.LoopOnce;
+		this.currentAction.play().reset();
+	}
+
+	stopWalkingAnimation() {
+		this.currentAction.stop();
+	}
+
 	destroy(cannon) {
 		cannon.removeVisual(this.body);
 		this.controller.player = null;
 	}
 
 	update(cannon,three,game,controllerHandler) {
-		// Basic game logic to update player and camera
-		this.processUserInput(cannon, controllerHandler);
-		this.weapon.update();
-		//this.updateCamera(three);
-		// Level-specific logic
-		
-		this.checkGameOver(game);
+
+		if (this.hasLoaded) {
+			// Basic game logic to update player and camera
+			this.processUserInput(cannon, controllerHandler);
+
+			if (this.weapon != null)
+				this.weapon.update();
+			//this.updateCamera(three);
+			// Level-specific logic
+
+			this.checkGameOver(game);
+		}
 	}
 
 	updateCamera(three) {
@@ -316,7 +384,7 @@ class Player { //turn into class
 };
 
 window.game.playerHandler = function () {
-	var _playerHandler = {	
+	var _playerHandler = {
 
 		players: 0,
 		cannon: null,
@@ -329,7 +397,7 @@ window.game.playerHandler = function () {
 		player: [],
 
 		addPlayer: function(controller) {
-			var temp = new Player(controller, this.enemyHandler);
+			var temp = new Player(controller, this.enemyHandler, 1);
 			temp.create(_playerHandler.cannon, _playerHandler.three);
 			_playerHandler.players++;
 		  	_playerHandler.player.push(temp);
@@ -374,7 +442,6 @@ window.game.playerHandler = function () {
 		}
 
 	}
-	
+
 	return _playerHandler;
 }
-		
