@@ -20,6 +20,9 @@ window.game.three = function() {
 		near: 1,
 		//default far setting for camera
 		far: 1000,
+
+		texture: null,
+
 		// Methods
         init: function(cannon, options) {
         	_three.container = options.container;
@@ -37,6 +40,7 @@ window.game.three = function() {
             _three.setupScene();
            	_three.setupLights();
            	_three.setupRenderer();
+						_three.setupSkybox();
             window.addEventListener( 'resize', _three.onWindowResize, false );
             // floor
             cannon.createBody({
@@ -91,6 +95,54 @@ window.game.three = function() {
                 //boxMesh.receiveShadow = true;
             //}
         },
+				setupSkybox() {
+
+					var video = document.createElement('video');
+					video.autoplay = true;
+					video.loop = true;
+					video.src = "models/stars.mp4";
+
+					texture = new THREE.VideoTexture(video);
+					texture.minFilter = THREE.LinearFilter;
+					texture.magFilter = THREE.LinearFilter;
+					texture.format = THREE.RGBFormat;
+
+					materialArray = [];
+					for (var i = 0; i < 6; i++) {
+							materialArray.push( new THREE.MeshStandardMaterial({
+					 			map: texture,
+					 			side: THREE.BackSide
+							}));
+					}
+
+					var material = new THREE.MeshBasicMaterial({map:texture});
+					material.side = THREE.BackSide;
+
+					var starsGeometry = new THREE.CubeGeometry( 75, 75, 75 );
+				//	var skyMaterial = new THREE.MeshBasicMaterial( materialArray );
+					var skyBox = new THREE.Mesh( starsGeometry, material);
+					skyBox.rotation.x += Math.PI / 2;
+					_three.scene.add( skyBox );
+
+					// var supGif = new SuperGif({ gif: "models/stars.gif" } );
+					// supGif.load();
+					// var gifCanvas = supGif.get_canvas();
+					//
+					// materialArray = [];
+					// for (var i = 0; i < 6; i++) {
+					// 		materialArray.push( new THREE.MeshStandardMaterial({
+					//  			map: new THREE.Texture( gifCanvas ),
+					//  			side: THREE.BackSide,
+					// 			displacementMap: material.map
+					// 		}));
+					// }
+					//
+					// var starsGeometry = new THREE.CubeGeometry( 500, 500, 500 );
+					// var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
+					// var skyBox = new THREE.Mesh( starsGeometry, skyMaterial );
+					// skyBox.rotation.x += Math.PI / 2;
+					// _three.scene.add( skyBox );
+				},
         setupCamera: function() {
         	//set up camera
             _three.camera = new THREE.PerspectiveCamera( _three.fov, window.innerWidth / window.innerHeight, _three.near, _three.far );
@@ -109,7 +161,7 @@ window.game.three = function() {
             _three.renderer.shadowMap.enabled = true;
             _three.renderer.shadowMap.type = THREE.BasicShadowMap;
             _three.renderer.setSize( window.innerWidth, window.innerHeight );
-            _three.renderer.setClearColor( _three.scene.fog.color, 1 ); 
+            _three.renderer.setClearColor( _three.scene.fog.color, 1 );
             document.body.appendChild( _three.renderer.domElement );
         },
 		setupLights: function() {

@@ -23,7 +23,7 @@ class Weapon {
 	}
 
 	update() {
-		this.player.body.pointToWorldFrame(new CANNON.Vec3(1,0,0), this.shootPosition);
+		this.player.body.pointToWorldFrame(new CANNON.Vec3(0,0.65,-1.8), this.shootPosition);
 		for (var i = this.projectiles.length - 1; i >= 0; i--) {
 			this.projectiles[i].update();
 		}
@@ -41,7 +41,7 @@ class Weapon {
 				this.projectiles.splice(i,1);
 				this.numProjectiles--;
 				return;
-			}	
+			}
 		}
 	}
 
@@ -56,7 +56,7 @@ class Weapon {
 					this.reloading = true;
 					this.reloadRateClock.start();
 				}
-			}	
+			}
 		}
 	}
 }
@@ -64,8 +64,9 @@ class Weapon {
 class Projectile {
 	constructor(weapon, cannon, i) {
 		this.weapon = weapon;
-		this.speed = 10;
+		this.speed = 6;
 		this.damage = 2;
+		this.lastDistance = 0;
 		this.clock = new THREE.Clock();
 		this.index = i;
 		this.clock.start();
@@ -80,7 +81,7 @@ class Projectile {
 			shape: new CANNON.Sphere(0.1),
 			material: cannon.solidMaterial,
 			collisionGroup: cannon.collisionGroup.projectile,
-			collisionFilter: cannon.collisionGroup.solids // | cannon.collisionGroup.enemy 
+			collisionFilter: cannon.collisionGroup.solids // | cannon.collisionGroup.enemy
 		});
 		this.body.velocity.set(
 			(this.body.position.x - weapon.player.body.position.x)*this.speed,
@@ -89,12 +90,12 @@ class Projectile {
 		);
 		//console.log(cannon.world.raycastClosest(from, to, raycastOptions, result));
 		//console.log(result.body.position);
-		this.body.addEventListener("collide", function(e){		
+		this.body.addEventListener("collide", function(e){
 			if (e.body.collisionFilterGroup == cannon.collisionGroup.solids) {
 				setTimeout(function() {
 					weapon.removeProjectile(this);
 				}, 0);
-			}	
+			}
 		//	var enemy = weapon.player.enemyHandler.getEnemyFromBody(e.body);
 		//		if (enemy != null) {
 		//			enemy.takeDamage(2);
@@ -118,22 +119,29 @@ class Projectile {
 			0,
 			this.body.velocity.z
 		);
-		var from = this.body.position;
-		var distance = 3 - this.clock.getElapsedTime();
-		var to = new CANNON.Vec3(from.x + this.body.velocity.x * distance, from.y, from.z + this.body.velocity.z * distance);
-		var result = new CANNON.RaycastResult();
-		var raycastOptions = {
-			collisionFilterGroup: this.weapon.cannon.collisionGroup.projectile,
-			collisionFilterMask: this.weapon.cannon.collisionGroup.enemy //| this.weapon.cannon.collisionGroup.solids
-		};
-		this.weapon.cannon.world.raycastClosest(from, to, raycastOptions, result);
-		if (result.body){
-			if (result.body.collisionFilterGroup == this.weapon.cannon.collisionGroup.enemy) {
-				if (this.body.position.distanceTo(result.body.position) < result.body.shapes[0].boundingSphereRadius + this.body.shapes[0].boundingSphereRadius) {
-					var enemy = this.weapon.player.enemyHandler.getEnemyFromBody(result.body);
-					if (enemy != null) {
-						enemy.takeDamage(this.damage);
-						this.weapon.removeProjectile(this);
+		var totalVel = Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2));
+		var velInFrame = totalVel*this.clock.getDelta() * 5; //optimizing raycasts to only be called initially and nearby the enemy
+		if (this.lastDistance > velInFrame * 5) {
+			this.lastDistance -= velInFrame;
+		} else {
+			var from = this.body.position;
+			var distance = 3 - this.clock.getElapsedTime();
+			var to = new CANNON.Vec3(from.x + this.body.velocity.x * distance, from.y, from.z + this.body.velocity.z * distance);
+			var result = new CANNON.RaycastResult();
+			var raycastOptions = {
+				collisionFilterGroup: this.weapon.cannon.collisionGroup.projectile,
+				collisionFilterMask: this.weapon.cannon.collisionGroup.enemy //| this.weapon.cannon.collisionGroup.solids
+			};
+			this.weapon.cannon.world.raycastClosest(from, to, raycastOptions, result);
+			if (result.body){
+				if (result.body.collisionFilterGroup == this.weapon.cannon.collisionGroup.enemy) {
+					this.lastDistance = this.body.position.distanceTo(result.body.position);
+					if (this.body.position.distanceTo(result.body.position) < result.body.shapes[0].boundingSphereRadius + this.body.shapes[0].boundingSphereRadius) {
+						var enemy = this.weapon.player.enemyHandler.getEnemyFromBody(result.body);
+						if (enemy != null) {
+							enemy.takeDamage(this.damage);
+							this.weapon.removeProjectile(this);
+						}
 					}
 				}
 			}
@@ -146,7 +154,9 @@ class Projectile {
 }
 
 class Player { //turn into class
-	constructor(controller, enemyHandler) {
+	constructor(controller, enemyHandler, index) {
+
+		this.index = index;
 		this.controller = controller;
 		this.weapon = null; //weapon holder
 		this.enemyHandler = enemyHandler;
@@ -154,6 +164,7 @@ class Player { //turn into class
 		this.mesh = null;
 		this.shape = null;
 		this.body = null;
+		this.model = null;
 		//lastRotation to keep player from rolling around
 		this.lastRotation = null;
 		// Player mass which affects other rigid bodies in the world
@@ -161,6 +172,12 @@ class Player { //turn into class
 		// Configuration for player speed
 		this.speed = 5;
 		this.health = 10;
+
+		// animation variables
+		this.mixer = null;
+		this.walkingAnimation = null;
+		this.walkingAction = null;
+
 		// Third-person camera configuration
 		this.cameraCoords = null;
 		// Camera offsets behind the player (horizontally and vertically)
@@ -201,6 +218,8 @@ class Player { //turn into class
 			rightHorizontal : 2,
 			rightVertical : 3
 		};
+
+		this.hasLoaded = false;
 	}
 		// Methods
 	create(cannon, three) {
@@ -210,24 +229,64 @@ class Player { //turn into class
 		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
 		//]);
 		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
+
+
 		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
-		this.body = cannon.createBody({
-			//geometry: this.model,
-			position: {
-				x: 0,
-				y: 1,
-				z: 0
-			},
-			meshMaterial: new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}),
-			mass: this.mass, 
-			shape: this.shape, 
-			material: cannon.playerPhysicsMaterial,
-			castShadow: true,
-			collisionGroup: cannon.collisionGroup.player,
-			collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
-		});
-		this.mesh = cannon.getMeshFromBody(this.body);
-		this.weapon = new Weapon(this, cannon);
+
+		var loader = new THREE.GLTFLoader();
+		var filePath =  "models/player" + this.index.toString() + ".glb";
+		console.log(filePath);
+		var self = this;
+		loader.load(filePath, function (gltf) {
+
+	   	gltf.scene.scale.set(0.75,0.75,0.75);
+
+			self.model = gltf.scene;
+
+			gltf.scene.traverse( function( node ) {
+			
+         		if ( node instanceof THREE.SkinnedMesh ) {
+         			node.castShadow = true;
+         			node.receiveShadow = true;
+         			//self.model = node.parent;
+         			//self.model.scale.set(2,2,2);
+         		}
+			
+   		 	});
+
+			// set mixer for animations
+			self.mixer = new THREE.AnimationMixer(self.model);
+
+			// set walk animation
+			self.walkingAnimation = gltf.animations[0];
+
+			self.body = cannon.createBody({
+				//geometry: this.model,
+				position: {
+					x: 0,
+					y: 2,
+					z: 0
+				},
+				meshMaterial: new THREE.MeshLambertMaterial({color: window.game.static.colors.cyan, flatShading: true}),
+				mass: self.mass,
+				mesh: self.model,
+				shape: self.shape,
+				material: cannon.playerPhysicsMaterial,
+				castShadow: true,
+				offset: new CANNON.Vec3(0,-1,0), //corrective offset for the model
+				collisionGroup: cannon.collisionGroup.player,
+				collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
+			});
+
+			self.mesh = cannon.getMeshFromBody(self.body);
+			self.weapon = new Weapon(self, cannon);
+
+			self.hasLoaded = true;
+			self.currentAction = self.mixer.clipAction(self.walkingAnimation);
+			self.currentAction.loop = THREE.LoopRepeat;
+			self.currentAction.play();
+		})
+
 		//this.mesh.castShadow = true;
 		//this.mesh.receiveShadow = true;
 		// Create a HingeConstraint to limit player's air-twisting - this needs improvement
@@ -245,19 +304,37 @@ class Player { //turn into class
 		// });
 	}
 
+	playWalkingAnimation() {
+		if (!this.currentAction.isRunning()) {
+			this.currentAction.play();
+			console.log("playing");
+		}
+	}
+
+	stopWalkingAnimation() {
+		if (this.currentAction != null) 
+			if (this.currentAction.isRunning())
+				this.currentAction.stop();
+	}
+
 	destroy(cannon) {
 		cannon.removeVisual(this.body);
 		this.controller.player = null;
 	}
 
 	update(cannon,three,game,controllerHandler) {
-		// Basic game logic to update player and camera
-		this.processUserInput(cannon, controllerHandler);
-		this.weapon.update();
-		//this.updateCamera(three);
-		// Level-specific logic
-		
-		this.checkGameOver(game);
+
+		if (this.hasLoaded) {
+			// Basic game logic to update player and camera
+			this.processUserInput(cannon, controllerHandler);
+
+			if (this.weapon != null)
+				this.weapon.update();
+			//this.updateCamera(three);
+			// Level-specific logic
+
+			this.checkGameOver(game);
+		}
 	}
 
 	updateCamera(three) {
@@ -274,6 +351,11 @@ class Player { //turn into class
 	moveWithAxis(horizontal, vertical) {
 		//if (Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2)) > this.speed) {
 		this.body.velocity.set(horizontal * this.speed, this.body.velocity.y, vertical * this.speed);
+		if (Math.abs(horizontal) > 0 || Math.abs(vertical) > 0) {
+			//this.playWalkingAnimation();
+		} else {
+			//this.stopWalkingAnimation();
+		}
 		//} else this.body.applyForce(new CANNON.Vec3(horizontal * this.acceleration * 100, 0, vertical * this.acceleration * 100), this.body.position);
 	}
 
@@ -283,10 +365,10 @@ class Player { //turn into class
 			this.lastRotation = window.game.helpers.cartesianToPolar(0,0);
 		}
 		if (horizontal == 0 && vertical == 0) {
-			cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), this.lastRotation.angle);
+			cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), this.lastRotation.angle - Math.PI/2);
 		} else {
 			this.lastRotation = window.game.helpers.cartesianToPolar(horizontal,vertical);
-			cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), this.lastRotation.angle);
+			cannon.setOnAxis(this.body, new CANNON.Vec3(0, 1, 0), this.lastRotation.angle - Math.PI/2);
 		}
 	}
 
@@ -316,7 +398,7 @@ class Player { //turn into class
 };
 
 window.game.playerHandler = function () {
-	var _playerHandler = {	
+	var _playerHandler = {
 
 		players: 0,
 		cannon: null,
@@ -329,7 +411,7 @@ window.game.playerHandler = function () {
 		player: [],
 
 		addPlayer: function(controller) {
-			var temp = new Player(controller, this.enemyHandler);
+			var temp = new Player(controller, this.enemyHandler, 1);
 			temp.create(_playerHandler.cannon, _playerHandler.three);
 			_playerHandler.players++;
 		  	_playerHandler.player.push(temp);
@@ -374,7 +456,6 @@ window.game.playerHandler = function () {
 		}
 
 	}
-	
+
 	return _playerHandler;
 }
-		
