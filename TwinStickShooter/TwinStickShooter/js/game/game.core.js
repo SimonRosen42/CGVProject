@@ -24,22 +24,13 @@ window.game.core = function () {
 
 			// Destroy THREE.js scene and Cannon.js world and recreate them
 			_cannon.destroy();
-			//_cannon.setup();
 			_three.reset(_cannon);
-			//_three.setup();
+			//delete all enemies and players
 			_playerHandler.destroy();
 			_enemyHandler.destroy();
-
-			// Create level again
-			//_game.level.create();
-
-			// Continue with the game loop
-			//_game.loop();
 		},
 		loop: function() {
-
 			var dt = _clock.getDelta();
-
 			// Assign an id to the animation frame loop
 			_animationFrameLoop =  window.requestAnimationFrame(_game.loop);
 			_controllerHandler.updateStatus();
@@ -50,12 +41,6 @@ window.game.core = function () {
 			_enemyHandler.updateEnemies(dt);
 			// Render visual scene
 			_three.render();
-
-			// for (var i = 0; i < _three.materialArray.length; i++) {
-			// 	_three.materialArray.displacementScale = 200;
-			// 	_three.materialArray.map.needsUpdate = true;
-			// 	_three.materialArray.displacementMap.needsUpdate = true;
-			// }
 		},
 		reset: function() {
 			_game.destroy();

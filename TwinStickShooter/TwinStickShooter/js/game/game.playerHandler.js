@@ -443,13 +443,13 @@ window.game.playerHandler = function () {
 		},
 
 		destroy: function() {
-			_playerHandler.players = 0; 
-			if (_playerHandler.player.length > 1) {
+			if (_playerHandler.player.length > 0) {
 				var p;
 				for (p in _playerHandler.player) {
 					_playerHandler.player[p].destroy(_playerHandler.cannon);
 				}
-				_playerHandler.player.splice(0,_playerHandler.player.length);
+				_playerHandler.player.splice(0,_playerHandler.players);
+				_playerHandler.players = 0; 
 			}
 		},
 
