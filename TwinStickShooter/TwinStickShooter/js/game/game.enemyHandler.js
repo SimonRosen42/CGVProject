@@ -87,8 +87,8 @@ class Enemy {
         			self.model = node.parent;
         			self.model.scale.set(2,2,2);
         		}
+					});
 
-   			 });
 
 			// set mixer for animations and load animationa
 			self.mixer = new THREE.AnimationMixer(self.model);

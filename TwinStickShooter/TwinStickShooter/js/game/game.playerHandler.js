@@ -250,14 +250,14 @@ class Player { //turn into class
 			self.model = gltf.scene;
 
 			gltf.scene.traverse( function( node ) {
-			
+
          		if ( node instanceof THREE.SkinnedMesh ) {
          			node.castShadow = true;
          			node.receiveShadow = true;
          			//self.model = node.parent;
          			//self.model.scale.set(2,2,2);
          		}
-			
+
    		 	});
 
 			// set mixer for animations
@@ -265,6 +265,7 @@ class Player { //turn into class
 
 			// set walk animation
 			self.walkingAnimation = gltf.animations[0];
+			self.playWalkingAnimation();
 
 			self.body = cannon.createBody({
 				//geometry: this.model,
@@ -288,9 +289,7 @@ class Player { //turn into class
 			self.weapon = new Weapon(self, cannon);
 
 			self.hasLoaded = true;
-			self.currentAction = self.mixer.clipAction(self.walkingAnimation);
-			self.currentAction.loop = THREE.LoopRepeat;
-			self.currentAction.play();
+
 		})
 
 		//this.mesh.castShadow = true;
@@ -311,14 +310,16 @@ class Player { //turn into class
 	}
 
 	playWalkingAnimation() {
-		if (!this.currentAction.isRunning()) {
+		if (this.mixer != null) {
+			this.currentAction = this.mixer.clipAction(this.walkingAnimation);
+			this.currentAction.loop = THREE.LoopRepeat;
 			this.currentAction.play();
 			console.log("playing");
 		}
 	}
 
 	stopWalkingAnimation() {
-		if (this.currentAction != null) 
+		if (this.currentAction != null)
 			if (this.currentAction.isRunning())
 				this.currentAction.stop();
 	}
@@ -328,7 +329,7 @@ class Player { //turn into class
 		this.controller.player = null;
 	}
 
-	update(cannon,three,game,controllerHandler) {
+	update(cannon,three,game,controllerHandler, dt) {
 
 		if (this.hasLoaded) {
 			// Basic game logic to update player and camera
@@ -336,6 +337,9 @@ class Player { //turn into class
 
 			if (this.weapon != null)
 				this.weapon.update();
+
+			if (this.mixer != null)
+				this.mixer.update(dt);
 			//this.updateCamera(three);
 			// Level-specific logic
 
@@ -423,10 +427,10 @@ window.game.playerHandler = function () {
 		  	_playerHandler.player.push(temp);
 		},
 
-		updatePlayers: function() {
+		updatePlayers: function(dt) {
 			if (_playerHandler.player[0] != null) {
 				for (var i = _playerHandler.player.length - 1; i >= 0; i--) {
-					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,_playerHandler.controllerHandler);
+					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,_playerHandler.controllerHandler, dt);
 				}
 			}
 		},
@@ -443,7 +447,7 @@ window.game.playerHandler = function () {
 		},
 
 		destroy: function() {
-			_playerHandler.players = 0; 
+			_playerHandler.players = 0;
 			if (_playerHandler.player.length > 1) {
 				var p;
 				for (p in _playerHandler.player) {

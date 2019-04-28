@@ -45,7 +45,7 @@ window.game.core = function () {
 			_controllerHandler.updateStatus();
 			// Update Cannon.js world and player state
 			_cannon.updatePhysics();
-			_playerHandler.updatePlayers();
+			_playerHandler.updatePlayers(dt);
 			//_game.enemy.update();
 			_enemyHandler.updateEnemies(dt);
 			// Render visual scene
@@ -99,7 +99,7 @@ window.game.core = function () {
 			_events.onKeyDown = function () {
 				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
 					_ui.fadeOut("infoboxIntro");
-					if (!_events.keyboard.pressed["w"]) 
+					if (!_events.keyboard.pressed["w"])
 						_playerHandler.addPlayer();
 				}
 				if (_events.keyboard.pressed["leftArrow"]) {
