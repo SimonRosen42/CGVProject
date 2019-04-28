@@ -24,8 +24,12 @@ class Weapon {
 
 	update() {
 		this.player.body.pointToWorldFrame(new CANNON.Vec3(0,0.65,-1.8), this.shootPosition);
-		for (var i = this.projectiles.length - 1; i >= 0; i--) {
-			this.projectiles[i].update();
+		//for (var i = this.projectiles.length - 1; i >= 0; i--) {
+		//	this.projectiles[i].update();
+		//}
+		var p;
+		for (p in this.projectiles) {
+			this.projectiles[p].update();
 		}
 
 		if (this.reloadRateClock.getElapsedTime() > this.reloadRate && this.reloading) {
@@ -39,7 +43,6 @@ class Weapon {
 			if (this.projectiles[i].index == p.index) {
 				this.cannon.removeVisual(p.body);
 				this.projectiles.splice(i,1);
-				this.numProjectiles--;
 				return;
 			}
 		}
@@ -50,6 +53,7 @@ class Weapon {
 			if (this.fireRateClock.getElapsedTime() > this.fireRate) {
 				this.projectiles.push(new Projectile(this, cannon, this.numProjectiles));
 				this.numProjectiles++;
+				if (this.numProjectiles > 200) this.numProjectiles = 0;
 				this.fireRateClock.start();
 				this.magazine--;
 				if (this.magazine <= 0) {
@@ -66,10 +70,11 @@ class Projectile {
 		this.weapon = weapon;
 		this.speed = 6;
 		this.damage = 2;
-		this.lastDistance = 0;
+		this.lastDistance = 0.0001;
 		this.clock = new THREE.Clock();
 		this.index = i;
 		this.clock.start();
+		this.shootPosition = null;
 		this.body = cannon.createBody({
 			mass: 1,
 			position: {
@@ -88,6 +93,7 @@ class Projectile {
 			0,
 			(this.body.position.z - weapon.player.body.position.z)*this.speed
 		);
+		this.shootPosition = weapon.shootPosition;
 		//console.log(cannon.world.raycastClosest(from, to, raycastOptions, result));
 		//console.log(result.body.position);
 		this.body.addEventListener("collide", function(e){
@@ -111,7 +117,7 @@ class Projectile {
 	update() {
 		this.body.position.set(
 			this.body.position.x,
-			this.weapon.shootPosition.y,
+			this.shootPosition.y,
 			this.body.position.z
 		);
 		this.body.velocity.set(
@@ -121,7 +127,7 @@ class Projectile {
 		);
 		var totalVel = Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2));
 		var velInFrame = totalVel*this.clock.getDelta() * 5; //optimizing raycasts to only be called initially and nearby the enemy
-		if (this.lastDistance > velInFrame * 5) {
+		if (this.lastDistance > velInFrame * 5 || this.lastDistance <= 0) {
 			this.lastDistance -= velInFrame;
 		} else {
 			var from = this.body.position;
@@ -437,12 +443,14 @@ window.game.playerHandler = function () {
 		},
 
 		destroy: function() {
-			_playerHandler.players = 0;
-			var player;
-			for (player in _playerHandler.player) {
-				player.destroy(_playerHandler.cannon);
+			_playerHandler.players = 0; 
+			if (_playerHandler.player.length > 1) {
+				var p;
+				for (p in _playerHandler.player) {
+					_playerHandler.player[p].destroy(_playerHandler.cannon);
+				}
+				_playerHandler.player.splice(0,_playerHandler.player.length);
 			}
-			_playerHandler.player.splice(0,_playerHandler.player.length);
 		},
 
 		init: function(c,t,g,ch,ui,eh) {

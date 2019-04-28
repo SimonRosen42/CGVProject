@@ -359,9 +359,9 @@ window.game.enemyHandler = function() {
 
 		destroy: function() {
 
-			var enemy;
-			for (enemy in _enemyHandler.enemies) {
-				enemy.destroy(_enemyHandler.cannon);
+			var e;
+			for (e in _enemyHandler.enemies) {
+				_enemyHandler.enemies[e].destroy(_enemyHandler.cannon);
 			}
 			_enemyHandler.enemies.splice(0,_enemyHandler.enemies.length);
 
