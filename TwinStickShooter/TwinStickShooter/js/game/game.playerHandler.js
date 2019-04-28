@@ -265,7 +265,7 @@ class Player { //turn into class
 
 			// set walk animation
 			self.walkingAnimation = gltf.animations[0];
-
+			self.playWalkingAnimation();
 			self.body = cannon.createBody({
 				//geometry: this.model,
 				position: {
@@ -279,7 +279,7 @@ class Player { //turn into class
 				shape: self.shape,
 				material: cannon.playerPhysicsMaterial,
 				castShadow: true,
-				offset: new CANNON.Vec3(0,-1,0), //corrective offset for the model
+				offset: new CANNON.Vec3(0,-0.8,0), //corrective offset for the model
 				collisionGroup: cannon.collisionGroup.player,
 				collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
 			});
@@ -288,9 +288,6 @@ class Player { //turn into class
 			self.weapon = new Weapon(self, cannon);
 
 			self.hasLoaded = true;
-			self.currentAction = self.mixer.clipAction(self.walkingAnimation);
-			self.currentAction.loop = THREE.LoopRepeat;
-			self.currentAction.play();
 		})
 
 		//this.mesh.castShadow = true;
@@ -311,7 +308,9 @@ class Player { //turn into class
 	}
 
 	playWalkingAnimation() {
-		if (!this.currentAction.isRunning()) {
+		if (this.mixer != null) {
+			this.currentAction = this.mixer.clipAction(this.walkingAnimation);
+			this.currentAction.loop = THREE.LoopRepeat;
 			this.currentAction.play();
 			console.log("playing");
 		}
@@ -328,7 +327,7 @@ class Player { //turn into class
 		this.controller.player = null;
 	}
 
-	update(cannon,three,game,controllerHandler) {
+	update(cannon,three,game,controllerHandler,dt) {
 
 		if (this.hasLoaded) {
 			// Basic game logic to update player and camera
@@ -336,6 +335,8 @@ class Player { //turn into class
 
 			if (this.weapon != null)
 				this.weapon.update();
+			if (this.mixer != null)
+				this.mixer.update(dt);
 			//this.updateCamera(three);
 			// Level-specific logic
 
@@ -358,9 +359,10 @@ class Player { //turn into class
 		//if (Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2)) > this.speed) {
 		this.body.velocity.set(horizontal * this.speed, this.body.velocity.y, vertical * this.speed);
 		if (Math.abs(horizontal) > 0 || Math.abs(vertical) > 0) {
-			//this.playWalkingAnimation();
+			if (vertical < 0) this.currentAction.timeScale = (Math.abs(horizontal) + Math.abs(vertical)) * -1;
+			else this.currentAction.timeScale = Math.abs(horizontal) + Math.abs(vertical);
 		} else {
-			//this.stopWalkingAnimation();
+			this.currentAction.timeScale = 0;
 		}
 		//} else this.body.applyForce(new CANNON.Vec3(horizontal * this.acceleration * 100, 0, vertical * this.acceleration * 100), this.body.position);
 	}
@@ -423,10 +425,10 @@ window.game.playerHandler = function () {
 		  	_playerHandler.player.push(temp);
 		},
 
-		updatePlayers: function() {
+		updatePlayers: function(dt) {
 			if (_playerHandler.player[0] != null) {
 				for (var i = _playerHandler.player.length - 1; i >= 0; i--) {
-					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,_playerHandler.controllerHandler);
+					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,_playerHandler.controllerHandler,dt);
 				}
 			}
 		},
