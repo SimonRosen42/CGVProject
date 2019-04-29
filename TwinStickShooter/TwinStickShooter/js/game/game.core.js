@@ -74,6 +74,7 @@ window.game.core = function () {
 			_controllerHandler.init(_playerHandler);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui,_enemyHandler);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
+			_levelHandler.init(_cannon,_three); //
 			for (var i = 0; i < 7; i++) {
 				var xP = (Math.random()-0.5)*20;
           	    var yP = 1 + (Math.random()-0.5)*1;
@@ -81,6 +82,9 @@ window.game.core = function () {
           	    _enemyHandler.addEnemy(new THREE.Vector3(xP,yP,zP));
 			}
 			_enemyHandler.addEnemy(new THREE.Vector3(5,2,5));
+
+			//add level test
+			_levelHandler.create();
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {
