@@ -48,8 +48,10 @@ window.game.core = function () {
 			_playerHandler.updatePlayers();
 			//_game.enemy.update();
 			_enemyHandler.updateEnemies(dt);
+			_ui.update();
 			// Render visual scene
 			_three.render();
+			
 		},
 		initComponents: function (options) {
 			// Reference game components one time
@@ -64,7 +66,7 @@ window.game.core = function () {
 			// Initialize components with options
 			_cannon.init(_three);
 			_three.init(_cannon, options);
-			_ui.init();
+			_ui.init(_three);
 			_events.init();
 
 			_clock = new THREE.Clock(true);

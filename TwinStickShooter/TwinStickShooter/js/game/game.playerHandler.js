@@ -166,6 +166,9 @@ class Player { //turn into class
 		// Camera offsets behind the player (horizontally and vertically)
 		this.cameraOffsetH = 380;
 		this.cameraOffsetV = 280;
+		this.health;
+		this.ammo;
+	
 		// Keyboard configuration for game.events.js (controlKeys must be associated to game.events.keyboard.keyCodes)
 		this.controlKeys = {
 			forward: "w",
@@ -210,7 +213,7 @@ class Player { //turn into class
 		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
 		//]);
 		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
-		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
+		this.shape = new CANNON.box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
 		this.body = cannon.createBody({
 			//geometry: this.model,
 			position: {

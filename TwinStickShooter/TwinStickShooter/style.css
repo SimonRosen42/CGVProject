@@ -113,17 +113,18 @@ input, select {
     margin: 0%;
     background:rgba(226, 26, 26, 0.11);
     border: 20px rgba(201, 15, 15, 1);
-    padding: 2% 5% 10% 2%;
+    padding: 0% 5% 10% 2%;
     
 
 }
 
 .health-box {
-    background-color: #ccc;
+    background-color: rgb(248, 17, 17);
     height: 10%;
     width: 100%;
     margin:inherit;
     border: solid 5px #aaa;
+    position: relative;
   }
 
 .player-1
