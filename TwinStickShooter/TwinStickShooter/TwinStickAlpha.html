@@ -4,7 +4,7 @@
 		<title>Game</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-
+		<link rel = "stylesheet" href="style.css">
 		<style type="text/css">
 			html, body {
 				width:100%;
@@ -15,33 +15,35 @@
 				overflow:hidden;
 			}
 
-			.infobox {
-				position:fixed;
-				top:30px;
-				left:50%;
-				width:600px;
-				height:320px;
-				padding:10px 30px;
-				margin:0 0 0 -300px;
-				background:#ffffff;
-				box-sizing:border-box;
-			}
-
-			.fade-out {
-				opacity:0;
-				transition:opacity 2000ms;
-				-webkit-transition:opacity 2000ms;
-			}
-
 		</style>
 	</head>
 
 	<body>
 		<div id="game"></div>
+		<div class="player-1" > 
+			<p class="health-box">Health</p>
+			<p>Ammo</p>
+			<p>Score</p>
+		</div>
+		<div class="player-2" > 
+			<p class="health-box">Health</p>
+			<p>Ammo</p>
+			<p>Score</p>
+		</div>
+		<div class="player-3" > 
+			<p class="health-box">Health</p>
+			<p>Ammo</p>
+			<p>Score</p>
+		</div>
+		<div class="player-4" > 
+			<p class="health-box">Health</p>
+			<p>Ammo</p>
+			<p>Score</p>
+		</div>
 		<div id="infobox-intro" class="infobox">
 			<h2>Welcome to the alpha of the twinstick shooter</h2>
 			<p>You can control the player by using the controller</p>
-			<p>Press X to start. Just try and move around.</p>
+			<p>Press X to start</p>
 		</div>
 
 		<script src="js/libs/stats.min.js"></script>

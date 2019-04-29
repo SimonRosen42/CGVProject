@@ -50,7 +50,7 @@ class controller {
 	    		}
 	    		for (i = 0; i < this.gamePad.axes.length; i++) {
 	    			if ( i == 3)
-	      				this.axes[i] = -1 *this.gamePad.axes[i].toFixed(4);
+	      				this.axes[i] = -1*this.gamePad.axes[i].toFixed(4);
 	      			else 
 	      				this.axes[i] = this.gamePad.axes[i].toFixed(4);
 	      			if (Math.abs(this.axes[i]) < 0.1) this.axes[i] = 0;

@@ -23,9 +23,15 @@ var enemyAnimation = {
 }
 
 var enemyState = {
-	IDLE : 0,
-	WALK : 1,
-
+	ENTER : 0,
+	IDLE : 1,
+	WALK : 2,
+	ATTACK : 3,
+	HURT : 4,
+	DEAD : 5,
+	ATTACKED : 6,
+	ATTACKDONE : 7,
+	DEADDONE : 8
 }
 
 class Enemy {
@@ -40,9 +46,10 @@ class Enemy {
 		this.speed = 1,
 		this.speedMax = 30, // Enemy mass which affects other rigid bodies in the world
 		this.lastAngle = null;
+		this.hurtDirection = null;
 		this.body = null;
 		// Enemy entity including mesh and rigid body
-		this.model = null; 
+		this.model = null;
 		this.shape = null;
 		this.index = i;
 		this.health = 10;
@@ -55,32 +62,33 @@ class Enemy {
 		this.currentAction = null;
 		this.animations = [];
 		//enemy.rotation = rotation;
-		
+
 	}
 
 	create(cannon, three, pos, gltfFilePath) {
 		// function that creates an enemy character
 		var loader = new THREE.GLTFLoader();
 
-	    this.shape = new CANNON.Box(new CANNON.Vec3(0.75,2,0.75));
-
+	    this.shape = new CANNON.Box(new CANNON.Vec3(0.8,3,0.8));
+	    var rand1 = Math.random() * 2 -1;
+	    var rand2 = Math.random() * 2 -1;
+	    this.lastAngle = window.game.helpers.cartesianToPolar(rand1,rand2).angle;
 	    var self = this;
-	    loader.load(gltfFilePath, 
+	    loader.load(gltfFilePath,
 	    	function(gltf) {
 
 	    	gltf.scene.scale.set(0.5,0.5,0.5);
 
-			self.model = gltf.scene; 
 			gltf.scene.traverse( function( node ) {
 
-        		if ( node instanceof THREE.Mesh ) { 
-        			node.castShadow = true; 
+        		if ( node instanceof THREE.Mesh ) {
+        			node.castShadow = true;
         			node.receiveShadow = true;
         			self.model = node.parent;
         			self.model.scale.set(2,2,2);
         		}
+					});
 
-   			 });
 
 			// set mixer for animations and load animationa
 			self.mixer = new THREE.AnimationMixer(self.model);
@@ -90,16 +98,26 @@ class Enemy {
 
 			// using animations example
 			self.switchCurrentAnimation(enemyAnimation.ENTER , true);
+			self.state = enemyState.ENTER;
 			//self.playCurrentAnimation();
-			self.mixer.addEventListener( 'finished', function( e ) { 
-				if (self.currentAnimation == self.animations[enemyAnimation.ENTER]) {
+			self.mixer.addEventListener( 'finished', function( e ) {
+				if (self.state == enemyState.ENTER) {
 					self.switchCurrentAnimation(enemyAnimation.IDLE);
-				} else self.currentAnimation = null;
+					self.state = enemyState.IDLE;
+				} else if (self.state == enemyState.HURT) {
+					self.state = enemyState.IDLE;
+					self.switchCurrentAnimation(enemyAnimation.IDLE);
+				} else if (self.state == enemyState.ATTACKDONE) {
+					self.state = enemyState.IDLE;
+					self.switchCurrentAnimation(enemyAnimation.IDLE);
+				} else if (self.state == enemyState.DEAD) {
+					self.state = enemyState.DEADDONE;
+				}
 			})
 			self.body = new cannon.createBody({
 				mass: self.mass,
 				shape: self.shape,
-		    	mesh: self.model, 
+		    	mesh: self.model,
 				material: cannon.enemyPhysicsMaterial,
 				meshMaterial: new THREE.MeshLambertMaterial({color : 0xff0000}),
 				position: {
@@ -108,7 +126,7 @@ class Enemy {
 					z: pos.z
 				},
 				castShadow: true,
-				offset: new CANNON.Vec3(0,+2,0), //corrective offset for the model
+				offset: new CANNON.Vec3(0,+3,0), //corrective offset for the model
 				collisionGroup: cannon.collisionGroup.enemy,
 				collisionFilter: cannon.collisionGroup.player | cannon.collisionGroup.solids | cannon.collisionGroup.enemy | cannon.collisionGroup.projectile
 			});
@@ -117,11 +135,11 @@ class Enemy {
 
 			self.mesh = cannon.getMeshFromBody(self.body);
 
-	    	},function ( xhr ) {
+	    	}, function ( xhr ) {
 
 				console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
 
-			},function ( error ) {
+			}, function ( error ) {
 
 				console.log( 'An error happened' );
 
@@ -145,14 +163,13 @@ class Enemy {
 
 	playCurrentAnimation() {
 		this.currentAction = this.mixer.clipAction(this.currentAnimation);
+		this.currentAction.loop = THREE.LoopRepeat;
 		this.currentAction.play();
 	}
 
 	playCurrentAnimationOnce() {
 		this.currentAction = this.mixer.clipAction(this.currentAnimation);
 		this.currentAction.loop = THREE.LoopOnce;
-		this.currentAction.enabled = true;
-		this.currentAction.clampWhenFinished = false;
 		this.currentAction.play().reset();
 	}
 
@@ -162,18 +179,46 @@ class Enemy {
 
 	takeDamage(damage) {
 		this.health -= damage;
-		this.switchCurrentAnimation(enemyAnimation.HURT1, true);
+		this.state = enemyState.HURT;
 	}
 
 	destroy(cannon) {
 		cannon.removeVisual(this.body);
 	}
 
+	attack() {
+		if (this.state != enemyState.ATTACK) {
+			this.state = enemyState.ATTACK;
+			var rand = Math.random()*4;
+				switch (true) {
+					case (rand < 1): this.switchCurrentAnimation(enemyAnimation.ATTACK1_R, true); break;
+					case (rand < 2): this.switchCurrentAnimation(enemyAnimation.ATTACK1_L, true); break;
+					case (rand < 3): this.switchCurrentAnimation(enemyAnimation.ATTACK2, true); break;
+					case (rand < 4): this.switchCurrentAnimation(enemyAnimation.ATTACK3, true); break;
+				}
+		}
+	}
+
+	die(cannon) {
+		if (this.state != enemyState.DEAD) {
+			this.state = enemyState.DEAD;
+			var rand = Math.random()*3;
+				switch (true) {
+					case (rand < 1): this.switchCurrentAnimation(enemyAnimation.DEAD1, true); break;
+					case (rand < 2): this.switchCurrentAnimation(enemyAnimation.DEAD2, true); break;
+					case (rand < 3): this.switchCurrentAnimation(enemyAnimation.DEAD3, true); break;
+				}
+			this.body.collisionFilterGroup = cannon.collisionGroup.player;
+		}
+	}
 
 	update(playerHandler, dt) {
 
 		if (this.hasLoaded) {
-		
+			if (this.health <= 0 && this.state != enemyState.DEAD) {
+				this.die(playerHandler.cannon);
+			}
+
 			if (this.mixer != null)
 				this.mixer.update(dt);
 			// utility function to find the straight line distance between two points
@@ -187,31 +232,70 @@ class Enemy {
 			var min = 10000000;
 			var minPlayerIndex = -1;
 			for (var i = 0; i < playerHandler.player.length; i++) {
-				var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
-				if (currDistance < min) {
-					min = currDistance;
-					minPlayerIndex = i;
+				if (playerHandler.player[i].hasLoaded) {
+					var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
+					if (currDistance < min) {
+						min = currDistance;
+						minPlayerIndex = i;
+					}
 				}
 			}
 
-			if (playerHandler.player[minPlayerIndex] != null) {
-				if (this.currentAnimation != this.animations[enemyAnimation.HURT1]) {
-					var closestPlayer = playerHandler.player[minPlayerIndex];
-					var closestPlayerPosition = closestPlayer.body.position;
-					var v = new CANNON.Vec3(closestPlayerPosition.x - this.body.position.x, 0, closestPlayerPosition.z - this.body.position.z);
-					var magnitude = Math.sqrt(Math.pow(v.x,2)+Math.pow(v.y,2)+Math.pow(v.z,2));
-					var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
-					direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
-					this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
-					this.lastAngle = window.game.helpers.cartesianToPolar(direction.x,-1*direction.z).angle - Math.PI/2;
-					this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
-					this.switchCurrentAnimation(enemyAnimation.WALK, false);
-				} else {
-					this.body.velocity = new CANNON.Vec3(0,0,0);
-					this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
+			if (playerHandler.player[minPlayerIndex] != null && playerHandler.player[minPlayerIndex].hasLoaded)  {
+				var closestPlayer = playerHandler.player[minPlayerIndex];
+				var closestPlayerPosition = closestPlayer.body.position;
+				var v = new CANNON.Vec3(closestPlayerPosition.x - this.body.position.x, 0, closestPlayerPosition.z - this.body.position.z);
+				var magnitude = Math.sqrt(Math.pow(v.x,2)+Math.pow(v.y,2)+Math.pow(v.z,2));
+				var direction = new CANNON.Vec3(v.x/magnitude,v.y/magnitude,v.z/magnitude);
+				if (this.state != enemyState.HURT)
+					this.hurtDirection = direction;
+				direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
+				if (this.state == enemyState.IDLE && magnitude < 10) {
+					this.state = enemyState.WALK;
 				}
-			} else {
+				if (this.state == enemyState.WALK && magnitude < 3) {
+					this.attack();
+				}
+			}
+
+			if (this.state == enemyState.ENTER) {
 				this.body.velocity.set(0,0,0);
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
+			} else if (this.state == enemyState.IDLE) {
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
+				this.body.velocity.set(0,0,0);
+				this.switchCurrentAnimation(enemyAnimation.IDLE);
+			} else if (this.state == enemyState.WALK) {
+				if (magnitude > 5) this.state = enemyState.IDLE;
+				this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
+				this.lastAngle = window.game.helpers.cartesianToPolar(direction.x,-1*direction.z).angle - Math.PI/2;
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
+				this.switchCurrentAnimation(enemyAnimation.WALK);
+			} else if (this.state == enemyState.HURT) {
+				this.body.velocity = new CANNON.Vec3(-1*this.hurtDirection.x/2,this.body.velocity.y,-1*this.hurtDirection.z/2);
+				this.hurtDirection = new CANNON.Vec3(this.hurtDirection.x*0.98, this.hurtDirection.y*0.98, this.hurtDirection.z*0.98); //damping down to zero
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
+				this.switchCurrentAnimation(enemyAnimation.HURT1, true);
+			} else if (this.state == enemyState.ATTACK) {
+				this.body.velocity.set(0,0,0);
+				this.lastAngle = window.game.helpers.cartesianToPolar(direction.x,-1*direction.z).angle - Math.PI/2;
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
+				if (this.currentAction.time > 1) {
+					this.state = enemyState.ATTACKED;
+				}
+			} else if (this.state == enemyState.DEAD) {
+				this.body.velocity.set(0,0,0);
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
+			}
+			if (this.state == enemyState.ATTACKED) {
+				if (magnitude < 4) {
+					closestPlayer.takeDamage();
+				}
+				this.state = enemyState.ATTACKDONE;
+			}
+			if (this.state == enemyState.ATTACKDONE) {
+				this.body.velocity.set(0,0,0);
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
 			}
 
 		}
@@ -224,7 +308,7 @@ class Enemy {
 window.game.enemyHandler = function() {
 
 	var _enemyHandler = {
-	
+
 		numEnemies: 0,
 		cannon: null,
 		three: null,
@@ -258,7 +342,7 @@ window.game.enemyHandler = function() {
 			// update players (player coordinates may have changed)
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
 				_enemyHandler.enemies[i].update(_enemyHandler.playerHandler, dt);
-				if (_enemyHandler.enemies[i].health <= 0) {
+				if (_enemyHandler.enemies[i].state == enemyState.DEADDONE) {
 					_enemyHandler.removeEnemy(_enemyHandler.enemies[i]);
 				}
 			}
@@ -275,9 +359,9 @@ window.game.enemyHandler = function() {
 
 		destroy: function() {
 
-			var enemy;
-			for (enemy in _enemyHandler.enemies) {
-				enemy.destroy(_enemyHandler.cannon);
+			var e;
+			for (e in _enemyHandler.enemies) {
+				_enemyHandler.enemies[e].destroy(_enemyHandler.cannon);
 			}
 			_enemyHandler.enemies.splice(0,_enemyHandler.enemies.length);
 
@@ -294,4 +378,3 @@ window.game.enemyHandler = function() {
 
 	return _enemyHandler;
 }
-
