@@ -177,7 +177,7 @@ class Player { //turn into class
 		// Player mass which affects other rigid bodies in the world
 		this.mass = 3;
 		// Configuration for player speed
-		this.speed = 2.5;
+		this.speed = 2;
 		this.health = 10;
 
 		// animation variables
@@ -414,9 +414,15 @@ window.game.playerHandler = function () {
 		},
 
 		updatePlayers: function(dt) {
+			var dead = 0;
 			if (_playerHandler.player[0] != null) {
 				for (var i = _playerHandler.player.length - 1; i >= 0; i--) {
 					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,_playerHandler.controllerHandler,dt);
+					if (_playerHandler.player[i].health <= 0) dead++;
+					if (dead == this.player.length) {
+						alert("LOSE");
+						this.game.reset();
+					}
 				}
 			}
 		},

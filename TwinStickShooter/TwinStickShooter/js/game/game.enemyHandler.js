@@ -43,7 +43,7 @@ class Enemy {
 	constructor(i) {
 
 		this.mass = 3,
-		this.speed = 1,
+		this.speed = 1.5,
 		this.speedMax = 30, // Enemy mass which affects other rigid bodies in the world
 		this.lastAngle = null;
 		this.hurtDirection = null;
@@ -250,7 +250,7 @@ class Enemy {
 				if (this.state != enemyState.HURT)
 					this.hurtDirection = direction;
 				direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
-				if (this.state == enemyState.IDLE && magnitude < 10) {
+				if (this.state == enemyState.IDLE && magnitude < 30) {
 					this.state = enemyState.WALK;
 				}
 				if (this.state == enemyState.WALK && magnitude < 3) {
@@ -318,7 +318,7 @@ window.game.enemyHandler = function() {
 		playerHandler: null,
 		enemies: [],
 		maxEnemies: 100,
-		maxCurrentEnemies: 3,
+		maxCurrentEnemies: 5,
 		spawnClock: new THREE.Clock(),
 
 		addEnemy: function(position) {
@@ -334,19 +334,25 @@ window.game.enemyHandler = function() {
 				if (_enemyHandler.enemies[i].index == enemy.index) {
 					_enemyHandler.enemies[i].destroy(_enemyHandler.cannon);
 					_enemyHandler.enemies.splice(i, 1);
-					return;
+					break;
 				}
+			}
+			console.log(_enemyHandler.numEnemies,_enemyHandler.enemies.length );
+			if (_enemyHandler.numEnemies >= this.maxEnemies && _enemyHandler.enemies.length == 0) {
+				alert("WIN");
+				this.game.reset();
 			}
 		},
 
 		updateEnemies: function(dt) {
 			if (_enemyHandler.numEnemies < this.maxEnemies) {
 				if (_enemyHandler.enemies.length < this.maxCurrentEnemies * _enemyHandler.playerHandler.player.length) {
-					if (this.spawnClock > 1) {
+					if (this.spawnClock.getElapsedTime() > 1) {
 						this.spawnClock.start();
+						this.addEnemy(new THREE.Vector3(10,0,10));
 					}
 				}
-			}
+			} 
 			// update enemies
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
 				_enemyHandler.enemies[i].update(_enemyHandler.playerHandler, dt);
