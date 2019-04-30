@@ -24,7 +24,7 @@ class Weapon {
 
 	update() {
 		this.player.body.pointToWorldFrame(new CANNON.Vec3(1,0,0), this.shootPosition);
-		for (var i = this.projectiles.length - 1; i >= 0; i--) {
+		for (let i = this.projectiles.length - 1; i >= 0; i--) {
 			this.projectiles[i].update();
 		}
 

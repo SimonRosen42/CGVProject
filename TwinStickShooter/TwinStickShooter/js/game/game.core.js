@@ -48,7 +48,10 @@ window.game.core = function () {
 			_playerHandler.updatePlayers();
 			//_game.enemy.update();
 			_enemyHandler.updateEnemies(dt);
+			// css elements update
 			_ui.update();
+			//player ui update
+			//_playerUI.update();
 			// Render visual scene
 			_three.render();
 			
@@ -67,12 +70,13 @@ window.game.core = function () {
 			_cannon.init(_three);
 			_three.init(_cannon, options);
 			_ui.init(_three);
+			//_playerUI.create(_three);
 			_events.init();
 
 			_clock = new THREE.Clock(true);
 			_clock.start();
 			
-			_controllerHandler.init(_playerHandler);
+			_controllerHandler.init(_playerHandler, _ui);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui,_enemyHandler);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
 			for (var i = 0; i < 7; i++) {
@@ -85,8 +89,8 @@ window.game.core = function () {
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {
-				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
-					_ui.fadeOut("infoboxIntro");
+				if (!_ui.hasClass("glow", "fade-out")) {
+					_ui.fadeOut("glow");
 					_playerHandler.addPlayer();
 				}
 				if (_events.keyboard.pressed["leftArrow"]) {
@@ -120,6 +124,7 @@ window.game.core = function () {
 	var _three;
 	var _cannon;
 	var _ui;
+	var _playerUI;
 	var _controllerHandler;
 	var _animationFrameLoop;
 	var _enemyHandler;

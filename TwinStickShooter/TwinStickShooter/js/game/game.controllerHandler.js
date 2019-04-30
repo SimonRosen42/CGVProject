@@ -66,6 +66,7 @@ window.game.controllerHandler = function () {
 		controller: [],
 		controllers: 0,
 		playerHandler: null,
+		uiHandler: null,
 
 		connecthandler: function(e) {
 	  		_controllerHandler.addgamepad(e.gamepad);
@@ -127,6 +128,7 @@ window.game.controllerHandler = function () {
 			if (t.pressed[0] && _controllerHandler.controllers > _controllerHandler.playerHandler.players && (t.player == null)) {
 				_controllerHandler.playerHandler.addPlayer(t);
 				t.player = _controllerHandler.playerHandler.player[_controllerHandler.playerHandler.player.length-1];
+				uiHandler.addPlayer(t.player);
 			}
 		},
 
@@ -154,10 +156,11 @@ window.game.controllerHandler = function () {
 		  }
 		}, 
 
-		init: function(ph) {
+		init: function(ph,ui) {
 			window.addEventListener("gamepadconnected", _controllerHandler.updateStatus);
 			window.addEventListener("gamepaddisconnected", _controllerHandler.disconnecthandler);
 			_controllerHandler.playerHandler = ph;
+			_controllerHandler.uiHandler = ui;
 		}
 	}
 	
