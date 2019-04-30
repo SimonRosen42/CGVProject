@@ -40,7 +40,7 @@ window.game.core = function () {
 			//_game.enemy.update();
 			_enemyHandler.updateEnemies(dt);
 			// css elements update
-			_ui.update();
+			_ui.update(_three);
 			//player ui update
 			//_playerUI.update();
 			// Render visual scene
@@ -73,7 +73,7 @@ window.game.core = function () {
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui,_enemyHandler);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
 			_events.init();
-			_ui.init(three);
+			_ui.init(_three);
 			_cannon.init(_three);
 			_three.init(_cannon, _options);
 			_game.start(options);
@@ -87,14 +87,16 @@ window.game.core = function () {
 
 			// Add specific events for key down
 			_events.onKeyDown = function () {
-				if (!_ui.hasClass("glow", "fade-out")) {
-					_ui.fadeOut("glow");
-					_playerHandler.addPlayer();
-				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
-					_ui.fadeOut("infoboxIntro");
-					if (!_events.keyboard.pressed["w"])
-						_playerHandler.addPlayer();
-				}
+				//if (!_ui.hasClass("glowI", "fade-out")) {
+				//	_ui.fadeOut("glowI");
+				//	if (!_events.keyboard.pressed["w"])
+				//		_playerHandler.addPlayer();
+				//}
+				//if (!_ui.hasClass("infoboxIntro", "fade-out")) {
+				//	_ui.fadeOut("infoboxIntro");
+				//	if (!_events.keyboard.pressed["w"])
+				//		_playerHandler.addPlayer();
+				//}
 				if (_events.keyboard.pressed["leftArrow"]) {
 					_three.camera.position.set(_three.camera.position.x+0.1,_three.camera.position.y,_three.camera.position.z);
 					_three.camera.lookAt(0,0,0);
@@ -117,9 +119,9 @@ window.game.core = function () {
 			};
 
 			_controllerHandler.anyControllerButtonPressed = function() {
-				if (!_ui.hasClass("infoboxIntro", "fade-out")) {
-					_ui.fadeOut("infoboxIntro");
-				}
+				//if (!_ui.hasClass("infoboxIntro", "fade-out")) {
+				//	_ui.fadeOut("infoboxIntro");
+				//}
 			};
 		}
 	};

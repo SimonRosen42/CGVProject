@@ -130,8 +130,7 @@ input, select {
     box-sizing:border-box;
 }
 
-.glow {
-  background-color: :Black; 
+.glow { 
   font-size: 80px;
   color: #fff;
   font-family: "Another-Danger-Slanted-Demo-Regular";
