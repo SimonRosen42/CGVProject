@@ -81,6 +81,8 @@ window.game.ui = function() {
 			// Store the DOM elements in the elements object to make them accessible in addClass, removeClass and hasClass
 			_ui.elements.glow = document.querySelector("glow");
 			//_ui.elements.playerUIMain = document.querySelector(playerUIMain);
+			_ui.elements.infoboxIntro = document.querySelector("#infobox-intro");
+//			_ui.elements.playerUIMain = document.querySelector(playerUIMain);
 		},
 		bindEvents: function () {
 			// Event bindings

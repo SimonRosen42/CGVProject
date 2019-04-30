@@ -49,7 +49,7 @@ class Enemy {
 		this.hurtDirection = null;
 		this.body = null;
 		// Enemy entity including mesh and rigid body
-		this.model = null; 
+		this.model = null;
 		this.shape = null;
 		this.index = i;
 		this.health = 10;
@@ -62,33 +62,33 @@ class Enemy {
 		this.currentAction = null;
 		this.animations = [];
 		//enemy.rotation = rotation;
-		
+
 	}
 
 	create(cannon, three, pos, gltfFilePath) {
 		// function that creates an enemy character
 		var loader = new THREE.GLTFLoader();
 
-	    this.shape = new CANNON.Box(new CANNON.Vec3(0.75,2,0.75));
+	    this.shape = new CANNON.Box(new CANNON.Vec3(0.8,3,0.8));
 	    var rand1 = Math.random() * 2 -1;
 	    var rand2 = Math.random() * 2 -1;
 	    this.lastAngle = window.game.helpers.cartesianToPolar(rand1,rand2).angle;
 	    var self = this;
-	    loader.load(gltfFilePath, 
+	    loader.load(gltfFilePath,
 	    	function(gltf) {
 
 	    	gltf.scene.scale.set(0.5,0.5,0.5);
 
 			gltf.scene.traverse( function( node ) {
 
-        		if ( node instanceof THREE.Mesh ) { 
-        			node.castShadow = true; 
+        		if ( node instanceof THREE.Mesh ) {
+        			node.castShadow = true;
         			node.receiveShadow = true;
         			self.model = node.parent;
         			self.model.scale.set(2,2,2);
         		}
+					});
 
-   			 });
 
 			// set mixer for animations and load animationa
 			self.mixer = new THREE.AnimationMixer(self.model);
@@ -100,7 +100,7 @@ class Enemy {
 			self.switchCurrentAnimation(enemyAnimation.ENTER , true);
 			self.state = enemyState.ENTER;
 			//self.playCurrentAnimation();
-			self.mixer.addEventListener( 'finished', function( e ) { 
+			self.mixer.addEventListener( 'finished', function( e ) {
 				if (self.state == enemyState.ENTER) {
 					self.switchCurrentAnimation(enemyAnimation.IDLE);
 					self.state = enemyState.IDLE;
@@ -117,7 +117,7 @@ class Enemy {
 			self.body = new cannon.createBody({
 				mass: self.mass,
 				shape: self.shape,
-		    	mesh: self.model, 
+		    	mesh: self.model,
 				material: cannon.enemyPhysicsMaterial,
 				meshMaterial: new THREE.MeshLambertMaterial({color : 0xff0000}),
 				position: {
@@ -126,7 +126,7 @@ class Enemy {
 					z: pos.z
 				},
 				castShadow: true,
-				offset: new CANNON.Vec3(0,+2,0), //corrective offset for the model
+				offset: new CANNON.Vec3(0,+3,0), //corrective offset for the model
 				collisionGroup: cannon.collisionGroup.enemy,
 				collisionFilter: cannon.collisionGroup.player | cannon.collisionGroup.solids | cannon.collisionGroup.enemy | cannon.collisionGroup.projectile
 			});
@@ -211,14 +211,14 @@ class Enemy {
 			this.body.collisionFilterGroup = cannon.collisionGroup.player;
 		}
 	}
- 
+
 	update(playerHandler, dt) {
 
 		if (this.hasLoaded) {
 			if (this.health <= 0 && this.state != enemyState.DEAD) {
 				this.die(playerHandler.cannon);
-			} 
-		
+			}
+
 			if (this.mixer != null)
 				this.mixer.update(dt);
 			// utility function to find the straight line distance between two points
@@ -232,14 +232,16 @@ class Enemy {
 			var min = 10000000;
 			var minPlayerIndex = -1;
 			for (var i = 0; i < playerHandler.player.length; i++) {
-				var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
-				if (currDistance < min) {
-					min = currDistance;
-					minPlayerIndex = i;
+				if (playerHandler.player[i].hasLoaded) {
+					var currDistance = getStraightLineDistance(this.body.position, playerHandler.player[i].body.position);
+					if (currDistance < min) {
+						min = currDistance;
+						minPlayerIndex = i;
+					}
 				}
 			}
 
-			if (playerHandler.player[minPlayerIndex] != null) {
+			if (playerHandler.player[minPlayerIndex] != null && playerHandler.player[minPlayerIndex].hasLoaded)  {
 				var closestPlayer = playerHandler.player[minPlayerIndex];
 				var closestPlayerPosition = closestPlayer.body.position;
 				var v = new CANNON.Vec3(closestPlayerPosition.x - this.body.position.x, 0, closestPlayerPosition.z - this.body.position.z);
@@ -250,7 +252,7 @@ class Enemy {
 				direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
 				if (this.state == enemyState.IDLE && magnitude < 10) {
 					this.state = enemyState.WALK;
-				} 
+				}
 				if (this.state == enemyState.WALK && magnitude < 3) {
 					this.attack();
 				}
@@ -306,7 +308,7 @@ class Enemy {
 window.game.enemyHandler = function() {
 
 	var _enemyHandler = {
-	
+
 		numEnemies: 0,
 		cannon: null,
 		three: null,
@@ -357,9 +359,9 @@ window.game.enemyHandler = function() {
 
 		destroy: function() {
 
-			var enemy;
-			for (enemy in _enemyHandler.enemies) {
-				enemy.destroy(_enemyHandler.cannon);
+			var e;
+			for (e in _enemyHandler.enemies) {
+				_enemyHandler.enemies[e].destroy(_enemyHandler.cannon);
 			}
 			_enemyHandler.enemies.splice(0,_enemyHandler.enemies.length);
 
@@ -376,4 +378,3 @@ window.game.enemyHandler = function() {
 
 	return _enemyHandler;
 }
-

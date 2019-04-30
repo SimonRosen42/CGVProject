@@ -14,6 +14,7 @@ window.game.cannon = function() {
 		bodies: [],
 		// Visuals are the visual representations of the bodies that are finally rendered by THREE.js
 		visuals: [],
+		numBodies : 0,
 		// Default friction and restitution
 		friction: 0.0,
 		restitution: 0.0,
@@ -215,6 +216,7 @@ window.game.cannon = function() {
 				// Add body/mesh to scene/world
 				_cannon.three.scene.add(mesh);
 				_cannon.world.add(body);
+				_cannon.numBodies++;
 			} else {
 				console.error("body or mesh not found, cannot add visual mesh");
 			}
@@ -229,6 +231,7 @@ window.game.cannon = function() {
 					if (_cannon.bodies[i] == body) {
 						_cannon.visuals.splice(i,1);
 						_cannon.bodies.splice(i,1);
+						_cannon.numBodies--;
 						return;
 					}
 				}
@@ -238,11 +241,12 @@ window.game.cannon = function() {
 			// Clear the whole physics world and THREE.js scene
 			var bodyCount = _cannon.bodies.length;
 			for (var i = 0; i < bodyCount; i++ ){
-				_cannon.three.scene.remove(visuals[i]);
-				_cannon.world.remove(bodies[i]);
+				_cannon.three.scene.remove(_cannon.visuals[i]);
+				_cannon.world.remove(_cannon.bodies[i]);
 			};
-			_cannon.bodies.splice(0,numBodies);
-			_cannon.visuals.splice(0,numBodies);
+			_cannon.bodies.splice(0,_cannon.numBodies);
+			_cannon.visuals.splice(0,_cannon.numBodies);
+			_cannon.numBodies = 0;
 		},
 		updatePhysics: function() {
 			// Store the amount of bodies into bodyCount
