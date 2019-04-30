@@ -4,7 +4,7 @@
 		<title>Game</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-
+		<link rel = "stylesheet" href="style.css">
 		<style type="text/css">
 			html, body {
 				width:100%;
@@ -13,41 +13,31 @@
 				margin:0;
 				padding:0;
 				overflow:hidden;
-			}
 
-			.infobox {
-				position:fixed;
-				top:30px;
-				left:50%;
-				width:600px;
-				height:320px;
-				padding:10px 30px;
-				margin:0 0 0 -300px;
-				background:#ffffff;
-				box-sizing:border-box;
-			}
-
-			.fade-out {
-				opacity:0;
-				transition:opacity 2000ms;
-				-webkit-transition:opacity 2000ms;
 			}
 
 		</style>
 	</head>
 
 	<body>
+
 		<div id="game"></div>
-		<div id="infobox-intro" class="infobox">
-			<h2>Welcome to the alpha of the twinstick shooter</h2>
-			<p>You can control the player by using the controller</p>
-			<p>Press X to start. Just try and move around.</p>
-		</div>
+
+		<!--<div id="glowI" class="glow">	
+			<h1 style="text-orientation: absolute" >
+				GAME NAME
+
+			</h1>
+		</div>-->
+
+
+		
 
 		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/detector.js"></script>
 		<script src="js/libs/three.js"></script>
 		<script src="js/libs/cannon.js"></script>
+		<script src="js/libs/GLTFLoader.js"></script>
 
 		<script src="js/game/game.static.js"></script>
 		<script src="js/game/game.three.js"></script>
@@ -60,6 +50,7 @@
 		<script src="js/game/game.models.js"></script>
 		<script src="js/game/game.playerHandler.js"></script>
 		<script src="js/game/game.enemyHandler.js"></script>
+		<script src="js/game/game.levelHandler.js"></script>
 
 		<script>
 			if (!Detector.webgl) {
@@ -68,7 +59,7 @@
 				window.gameInstance = window.game.core();
 				window.gameInstance.init({
 					container: document.querySelector("#game"),
-					clearColour: window.game.static.black,
+					//clearColour: window.game.static.black,
 					//fov: 45,
 					//near: 1,
 					//far: 15000

@@ -19,14 +19,14 @@ window.game.three = function() {
 		//default near setting for camera
 		near: 1,
 		//default far setting for camera
-		far: 15000,
+		far: 1000,
+
+		texture: null,
 
 		// Methods
-		init: function(options) {
-			// Initialize the container from the options
-			_three.container = options.container;
-
-			if (options.fov) { //if fov is in options change default camera fov rendering distance
+        init: function(cannon, options) {
+        	_three.container = options.container;
+        	if (options.fov) { //if fov is in options change default camera fov rendering distance
 				_three.fov = options.fov;
 			}
 			if (options.near) { //if near is in options change default camera near rendering distance
@@ -36,136 +36,177 @@ window.game.three = function() {
 				_three.far = options.far;
 			}
 
-			// Basic scene setup
-			_three.setup();
+        	_three.setupCamera();
+            _three.setupRenderer();
+            window.addEventListener( 'resize', _three.onWindowResize, false );
 
-			// Create the main perspective camera using fov, near and far
-			_three.camera = new THREE.PerspectiveCamera(_three.fov, window.innerWidth / window.innerHeight, _three.near, _three.far);
-			// Set the up vector to the Z axis, necessary as cannon uses Z as up vector
-			_three.camera.up.set(0, 0, 1);
-
-			// Define default WebGL renderer with anti-aliasing and shadows
-			_three.renderer = new THREE.WebGLRenderer({ antialias: true });
-			//_three.renderer.shadowMapEnabled = true;
-			//_three.renderer.shadowMapType = THREE.PCFSoftShadowMap;
-
+            _three.reset(cannon);
+            // Add boxes
+          //var halfExtents = new CANNON.Vec3(1,1,1);
+          //var boxShape = new CANNON.Box(halfExtents);
+          //var boxGeometry = new THREE.BoxGeometry(halfExtents.x*2,halfExtents.y*2,halfExtents.z*2);
+          //for(var i=0; i<7; i++){
+          //    var xP = (Math.random()-0.5)*20;
+          //    var yP = 1 + (Math.random()-0.5)*1;
+          //    var zP = (Math.random()-0.5)*20;
+          //    cannon.createBody({
+          //    	mass: 5,
+          //    	shape: boxShape,
+          //    	position: {
+          //    		x: xP,
+          //    		y: yP,
+          //    		z: zP
+          //    	},
+          //    	//geometry: boxGeometry,
+          //    	meshMaterial: new THREE.MeshLambertMaterial({color: 0x991199}),
+          //    	receiveShadow: false,
+          //    	castShadow: true,
+          //    	collisionGroup: cannon.collisionGroup.solids,
+          //		collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.player | cannon.collisionGroup.solids
+          //    });
+                //var boxBody = new CANNON.Body({ mass: 5 });
+                //boxBody.addShape(boxShape);
+                //var boxMesh = new THREE.Mesh( boxGeometry, material );
+                //cannon.world.add(boxBody);
+                //_three.scene.add(boxMesh);
+                //boxBody.position.set(x,y,z);
+                //boxMesh.position.set(x,y,z);
+                //boxMesh.castShadow = true;
+                //boxMesh.receiveShadow = true;
+            //}
+        },
+        reset: function(cannon) {
+			_three.setupScene();
 			_three.setupLights();
+			_three.setupSkybox();
 
-			// Set the background color for rendering
-			if (options.clearColour) {
-				_three.renderer.setClearColor(options.clearColour, 1);
+			// floor
+            cannon.createBody({
+            	mass: 0,
+            	shape: new CANNON.Plane(),
+            	position: {
+            		x: 0,
+            		y: 0,
+            		z: 0
+            	},
+            	rotation: [new CANNON.Vec3(1,0,0), -Math.PI/2],
+            	geometry: new THREE.PlaneGeometry( 40, 40, 50, 50 ),
+            	meshMaterial: new THREE.MeshLambertMaterial({ color: 0xdddddd, opacity: 0.8, transparent:true }),
+            	receiveShadow: true,
+            	castShadow: false,
+            	material: cannon.groundMaterial,
+            	collisionGroup: cannon.collisionGroup.solids,
+            	collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.player | cannon.collisionGroup.solids
+            });
+		},
+		setupSkybox() {
+
+			var video = document.createElement('video');
+			video.src = "models/stars.mp4";
+			video.autoplay = true;
+			video.loop = true;
+
+			texture = new THREE.VideoTexture(video);
+			texture.minFilter = THREE.LinearFilter;
+			texture.magFilter = THREE.LinearFilter;
+			texture.format = THREE.RGBFormat;
+
+			materialArray = [];
+			for (var i = 0; i < 6; i++) {
+					materialArray.push( new THREE.MeshStandardMaterial({
+			 			map: texture,
+			 			side: THREE.BackSide
+					}));
 			}
 
-			// Add window resize listener to keep screen size for the canvas, and not resize screen size
-			_three.onWindowResize();
-			window.addEventListener("resize", _three.onWindowResize, false);
+			var material = new THREE.MeshBasicMaterial({map:texture});
+			material.side = THREE.BackSide;
 
-			// Append the canvas element to the container
-			_three.container.appendChild(_three.renderer.domElement);
+			var starsGeometry = new THREE.CubeGeometry( 75, 75, 75 );
+		//	var skyMaterial = new THREE.MeshBasicMaterial( materialArray );
+			var skyBox = new THREE.Mesh( starsGeometry, material);
+			skyBox.rotation.x += Math.PI / 2;
+			_three.scene.add( skyBox );
 
+			// var supGif = new SuperGif({ gif: "models/stars.gif" } );
+			// supGif.load();
+			// var gifCanvas = supGif.get_canvas();
+			//
+			// materialArray = [];
+			// for (var i = 0; i < 6; i++) {
+			// 		materialArray.push( new THREE.MeshStandardMaterial({
+			//  			map: new THREE.Texture( gifCanvas ),
+			//  			side: THREE.BackSide,
+			// 			displacementMap: material.map
+			// 		}));
+			// }
+			//
+			// var starsGeometry = new THREE.CubeGeometry( 500, 500, 500 );
+			// var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
+			// var skyBox = new THREE.Mesh( starsGeometry, skyMaterial );
+			// skyBox.rotation.x += Math.PI / 2;
+			// _three.scene.add( skyBox );
 		},
-		destroy: function() {
-
-		},
-		setup: function () {
-			// Setup main scene
-			_three.scene = new THREE.Scene();
-		},
+        setupCamera: function() {
+        	//set up camera
+            _three.camera = new THREE.PerspectiveCamera( _three.fov, window.innerWidth / window.innerHeight, _three.near, _three.far );
+            _three.camera.up.set(0,1,0); //makes sure up vector is along y-axis
+            _three.camera.position.set(0,40,50);
+            _three.camera.lookAt(0,0,0);
+        },
+        setupScene: function() {
+        	//setup scene
+            _three.scene = new THREE.Scene();
+            //_three.scene.fog = new THREE.Fog( 0x222222, 0, 500 ); //add fog
+        },
+        setupRenderer: function() {
+        	_three.renderer = new THREE.WebGLRenderer({antialias: true}); //setup renderer with antialiasing
+        	//set up shadows
+            _three.renderer.shadowMap.enabled = true;
+            _three.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            _three.renderer.setSize( window.innerWidth, window.innerHeight );
+            _three.renderer.setClearColor( 0x222222, 1 );
+            document.body.appendChild( _three.renderer.domElement );
+        },
 		setupLights: function() {
-			var hemiLight = new THREE.HemisphereLight(window.game.static.colors.white, window.game.static.colors.white, 0.6);
-				hemiLight.position.set(0, 0, -1);
-				_three.scene.add(hemiLight);
+			//add ambient light
+            var ambient = new THREE.AmbientLight( 0x111111 );
+            _three.scene.add( ambient );
 
-				// var spotLight = new THREE.SpotLight(window.game.static.colors.white);
-				// spotLight.position.set(0, 0, 500);
-				// spotLight.castShadow = true;
-				// _three.scene.add(spotLight);
+            //spotlight that can cast shadows
+            var light = new THREE.SpotLight( 0xffffff );
+            light.position.set( 10, 30, 20 );
+            light.target.position.set( 0, 0, 0 );
+            light.castShadow = true;
+
+            light.shadow.camera.near = 20;
+            light.shadow.camera.far = 100;
+            light.shadow.camera.fov = 45;
+            light.shadowMapBias = 0.1;
+            light.shadowMapDarkness = 0.7;
+            light.shadow.mapSize.width = 512*2;
+            light.shadow.mapSize.height = 512*2;
+
+            //light.shadowCameraVisible = true;
+            _three.scene.add( light );
+			//var hemiLight = new THREE.HemisphereLight(window.game.static.colors.white, window.game.static.colors.white, 0.6);
+			//	hemiLight.position.set(0, 0, -1);
+			//	_three.scene.add(hemiLight);
+//
+			//	var spotLight = new THREE.SpotLight(window.game.static.colors.white);
+			//	spotLight.position.set(0, 0, 500);
+			//	//spotLight.castShadow = true;
+			//	_three.scene.add(spotLight);
 		},
 		render: function() {
 			// Update the scene
 			_three.renderer.render(_three.scene, _three.camera);
 		},
-		onWindowResize: function() {
+ 		onWindowResize: function() {
 			// Keep screen size when window resizes
 			_three.camera.aspect = window.innerWidth / window.innerHeight;
 			_three.camera.updateProjectionMatrix();
 			_three.renderer.setSize(window.innerWidth, window.innerHeight);
-		},
-		createModel: function(jsonData, scale, materials, isGeometry) {
-			// Variables for JSONLoader and imported model data
-			var loader;
-			var jsonModel;
-			var meshMaterial;
-			var model = {};
-
-			// If isGeometry is set, the JSON model has already been loaded asynchronously and the geometry data is available here
-			if (isGeometry) {
-				jsonModel = jsonData;
-			} else {
-				// Regular model loading of JSON data that exists e.g. in game.models.js
-				loader = new THREE.JSONLoader();
-				jsonModel = loader.parse(JSON.parse(JSON.stringify(jsonData)));
-			}
-
-			// Create the Cannon.js geometry for the imported 3D model
-			_three.createCannonGeometry(jsonModel.geometry, scale);
-			// Generate the halfExtents that are needed for Cannon.js
-			model.halfExtents = _three.createCannonHalfExtents(jsonModel.geometry);
-
-			// Check if materials is set
-			if (materials) {
-				// If materials is an array, assign each material to the corresponding imported material
-				if (materials.length) {
-					// Iterate through the imported materials and assing from material array if array
-					if (jsonModel.materials) {
-						for (var i = 0; i < jsonModel.materials.length; i++) {
-							jsonModel.materials[i] = materials[i];
-						}
-
-						// Create a multi-face material if array bigger than 0
-						meshMaterial = new THREE.MeshFaceMaterial(jsonModel.materials);
-					}
-				} else {
-					// Use and assign the defined material directly if not array
-					meshMaterial = materials;
-				}
-			} else {
-				// Create a multi-face material
-				if (jsonModel.materials) {
-					meshMaterial = new THREE.MeshFaceMaterial(jsonModel.materials);
-				}
-			}
-
-			// Assign the material(s) to the created mesh
-			model.mesh = new THREE.Mesh(jsonModel.geometry, meshMaterial);
-
-			// Return an object containing a mesh and its halfExtents
-			return model;
-		},
-		createCannonGeometry: function(geometry, scale) {
-			// Get the bounding box for the provided geometry
-			geometry.computeBoundingBox();
-
-			// Center the imported model so the axis-aligned bounding boxes (AABB) and bounding spheres are generated correctly by Cannon.js
-			var translateX = -((geometry.boundingBox.size().x / 2) + geometry.boundingBox.min.x);
-			var translateY = -((geometry.boundingBox.size().y / 2) + geometry.boundingBox.min.y);
-			var translateZ = -((geometry.boundingBox.size().z / 2) + geometry.boundingBox.min.z);
-
-			// Apply various matrix transformations to translate, rotate and scale the imported model for the Cannon.js coordinate system
-			geometry.applyMatrix(new THREE.Matrix4().makeTranslation(translateX, translateY, translateZ));
-			geometry.applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2));
-			geometry.applyMatrix(new THREE.Matrix4().makeScale(scale, scale, scale));
-		},
-		createCannonHalfExtents: function(geometry) {
-			// The final bounding box also exists so get its dimensions
-			geometry.computeBoundingBox();
-
-			// Return a Cannon vector to define the halfExtents
-			return new CANNON.Vec3(
-				(geometry.boundingBox.max.x - geometry.boundingBox.min.x) * 0.5,
-				(geometry.boundingBox.max.y - geometry.boundingBox.min.y) * 0.5,
-				(geometry.boundingBox.max.z - geometry.boundingBox.min.z) * 0.5
-			);
 		}
 	};
 
