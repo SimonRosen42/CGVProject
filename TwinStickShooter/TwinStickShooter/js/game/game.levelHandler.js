@@ -11,6 +11,8 @@ var allWalls = []; // list of all walls
 var wallWidth = 0.5;
 var wallHeight = 1.5;
 
+var grates = [];
+
 class Level {
 	constructor(){
 		this.size = 10;
@@ -101,69 +103,11 @@ class Room{
 		// right wall
 		wallPos = {x: this.w + this.roomPos.x, y:0 + this.roomPos.y, z: 0 + this.roomPos.z}; // note wallPos is an offset of roomPos
 		wallProps = {w: wallWidth, l: this.l + wallWidth, h:wallHeight};
-		walls.push(new Wall(cannon,three,wallPos, wallProps))
+		walls.push(new Wall(cannon,three,wallPos, wallProps));
+
+		this.createGrates();
 
 		//var centre = new Wall(cannon,three,{x:this.roomPos.x,y:this.roomPos.y,z:this.roomPos.z}, {w:0.5, l:0.5, h:0.5}) // just for refrence to show centre of level
-
-		//var corridor = new Corridor(cannon,three,{x:0,y:0,z:0}, {x:2,y:0,z:0});
-		//door 1 - left door //vertical wall
-		if (this.doorPos[0] !== null){
-			// console.log("Yo 1");
-			// wallPos = {x:0, y:0, z:0};
-			// wallProps = {w: wallWidth, l: this.doorPos[0].z, h:wallHeight};
-			// walls.push(new Wall(cannon,three,wallPos, wallProps));
-			// doors[0] = new Door(cannon,three,this.doorPos[0]);
-			//honestly just yoloing
-			// wallPos.z = this.doorPos[0].z+2;
-			// wallPos = {x:0, y:0, z:this.doorPos[0].z};
-			// wallProps = {w: wallWidth, l: this.l - this.doorPos[0].z, h:wallHeight};
-			// wallProps.l = this.l - this.doorPos[0].z - 2 //?
-			//doing it like this because JS is a piece of shit
-			// walls.push(new Wall(cannon,three,
-			// 	{x:0, y:0, z:this.doorPos[0].z},wallProps)); //wallPos
-				//{w: wallWidth, l: this.l - this.doorPos[0].z, h:wallHeight})); //wallProps
-		} else {
-			//null therefore no door
-		}
-		//door 2 - top door
-		if (this.doorPos[1] !== null){
-			console.log("Yo 2");
-		} else {
-			console.log("Ma 2");
-		}
-		//door 3 - right door
-		if (this.doorPos[2] !== null){
-			console.log("Yo 3");
-		} else {
-			console.log("Ma 3");
-		}
-		//door 4 - bottom door
-		if (this.doorPos[3] !== null){
-			console.log("Yo 4");
-		} else {
-			console.log("Ma 4");
-		}
-
-		//consists of up to 8 walls
-
-		// this.createWall(cannon,three,wallPos, wallProps)
-		// // top right
-		// wallPos = {x:this.w, y:0, z:0};
-		// this.createWall(cannon,three,wallPos, wallProps)
-		// // bottom left
-		// wallPos = {x:0, y:0, z:this.l};
-		// this.createWall(cannon,three,wallPos, wallProps)
-		// // bottom right
-		// wallPos = {x:this.w, y:0, z:this.l};
-		// this.createWall(cannon,three,wallPos, wallProps)
-		//create walls and doors
-		// if door on top wall
-
-		// if door on bottom wall
-
-		// if door on left wall
-
-		//if door on right wall
 
 		switch (this.roomType) {
 			case RoomType.Start: //Start Room
@@ -185,6 +129,30 @@ class Room{
 				//
 				break;
 		}
+	}
+
+	createGrates(){
+		this.wallOffset = 3;
+		this.centreOffset = 2;
+		this.maxLeft = this.roomPos.x - this.w + this.wallOffset;
+		this.maxRight = this.roomPos.x + this.w - this.wallOffset;
+		this.maxBottom = this.roomPos.z - this.l + this.wallOffset;
+		this.maxTop = this.roomPos.z + this.l - this.wallOffset;
+
+		this.centreLeft = this.roomPos.x - this.centreOffset;
+		this.centreRight = this.roomPos.x + this.centreOffset;
+		this.centreBottom = this.roomPos.z - this.centreOffset;
+		this.centreTop = this.roomPos.z - this.centreOffset;
+
+		// for (var i = 0; i<4; i++){
+		//
+		// 	grates.push(new Grate(this.cannon,this.three,pos));
+		// }
+		
+		grates.push(new Grate(cannon,three,{x:-13,y:0.01,z:-10})); //.01 - wallHeight
+		grates.push(new Grate(cannon,three,{x:13,y:0.01,z:5})); //.01 - wallHeight
+		grates.push(new Grate(cannon,three,{x:8,y:0.01,z:-17})); //.01 - wallHeight
+		grates.push(new Grate(cannon,three,{x:5,y:0.01,z:-4})); //.01 - wallHeight
 	}
 }
 
@@ -285,6 +253,37 @@ class Door{
 			collisionFilter: cannon.collisionGroup.solids | cannon.collisionGroup.player | cannon.collisionGroup.enemy
 		});
 		this.mesh = cannon.getMeshFromBody(this.body);
+	}
+}
+
+class Grate{
+	constructor(cannon, three, pos){
+		this.cannon = cannon;
+		this.three = three;
+		this.pos = pos;
+		this.texture = new THREE.TextureLoader().load( 'texture/metal_grate.jpg' ); //load texture
+		this.create();
+	}
+
+	create(){
+		//creates grate as PlaneGeometry with grate texture
+		this.cannon.createBody({
+			mass: 0,
+			shape: new CANNON.Plane(),
+			position: {
+				x: this.pos.x,
+				y: this.pos.y,
+				z: this.pos.z
+			},
+			rotation: [new CANNON.Vec3(1,0,0), -Math.PI/2],
+			geometry: new THREE.PlaneGeometry( 2, 2), //, 50, 50
+			meshMaterial: new THREE.MeshLambertMaterial({opacity: 0.8, transparent: true, map:this.texture }),
+			receiveShadow: true,
+			castShadow: false,
+			material: this.cannon.groundMaterial,
+			// collisionGroup: this.cannon.collisionGroup.solids,
+			// collisionFilter: this.cannon.collisionGroup.enemy | this.cannon.collisionGroup.player | this.cannon.collisionGroup.solids
+		});
 	}
 }
 
