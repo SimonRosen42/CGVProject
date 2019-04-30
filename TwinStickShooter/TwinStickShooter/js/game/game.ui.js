@@ -31,16 +31,18 @@ class  playerUI {
 	}
 	// methods
 	update(three){
-		
-		this.makeHealthBar(three);
-		this.makeAmmoBar(three);
-
+		if (this.player != null) {
+			this.makeAmmoBar(three);
+			this.makeHealthBar(three);
+		} else {
+			this.removeBars(three);
+		}
 	}
 
 	makeAmmoBar(three) {
 		if (this.player.weapon.reloading) {
 			var	maxArcAngle = (this.player.weapon.reloadRateClock.getElapsedTime()/this.player.weapon.reloadRate) * 360;
-			var geometry = new THREE.RingGeometry(0.5,1,32,1,0,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
+			var geometry = new THREE.RingGeometry(0.5,1,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
 			var material = new THREE.MeshBasicMaterial({color: 0xe1e1e1, side: THREE.DoubleSide}	);
 			three.scene.remove(this.ammoBar);
 			this.ammoBar = new THREE.Mesh(geometry,material);
@@ -52,7 +54,7 @@ class  playerUI {
 			var magazine = 0;
 			if (this.player.weapon.magazine > 0) magazine = this.player.weapon.magazine;
 			var	maxArcAngle = (magazine/this.player.weapon.magazineMax) * 360;
-			var geometry = new THREE.RingGeometry(0.5,1,32,1,0,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
+			var geometry = new THREE.RingGeometry(0.5,1,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
 			var material = new THREE.MeshBasicMaterial({color: 'white', side: THREE.DoubleSide}	);
 			three.scene.remove(this.ammoBar);
 			this.ammoBar = new THREE.Mesh(geometry,material);
@@ -72,7 +74,7 @@ class  playerUI {
 			return;
 		}
 		var	maxArcAngle = (health/10) * 360;
-		var geometry = new THREE.RingGeometry(1,1.5,32,1,0,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
+		var geometry = new THREE.RingGeometry(1,1.5,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
 		var material = new THREE.MeshBasicMaterial({color: 'green', side: THREE.DoubleSide}	);
 		three.scene.remove(this.healthBar);
 		this.healthBar = new THREE.Mesh(geometry,material);
@@ -81,6 +83,11 @@ class  playerUI {
 		this.healthBar.rotation.set(Math.PI/2,0,0);
 		three.scene.add(this.healthBar);
 	}
+
+	removeBars(three) {
+		three.scene.remove(this.healthBar);
+		three.scene.remove(this.ammoBar);
+	} 
 }
 
 
@@ -117,7 +124,11 @@ window.game.ui = function() {
 			temp.create(_ui.three);
 		},
 		destroy: function () {
-
+			for (let i = 0; i < _ui.elements.playerUIData.length; i++) {
+				var p = _ui.elements.playerUIData[i];
+				p.player = null;
+			}
+			playerUIData = [];
 		},
 		update: function(three){
 			for (let i = 0; i < _ui.elements.playerUIData.length; i++) {
