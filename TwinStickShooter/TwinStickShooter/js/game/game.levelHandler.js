@@ -105,7 +105,7 @@ class Room{
 		wallProps = {w: wallWidth, l: this.l + wallWidth, h:wallHeight};
 		walls.push(new Wall(cannon,three,wallPos, wallProps));
 
-		this.createGrates();
+		this.createGrates(cannon, three);
 
 		//var centre = new Wall(cannon,three,{x:this.roomPos.x,y:this.roomPos.y,z:this.roomPos.z}, {w:0.5, l:0.5, h:0.5}) // just for refrence to show centre of level
 
@@ -131,7 +131,7 @@ class Room{
 		}
 	}
 
-	createGrates(){
+	createGrates(cannon, three){
 		this.wallOffset = 3;
 		this.centreOffset = 2;
 		this.maxLeft = this.roomPos.x - this.w + this.wallOffset;
@@ -148,7 +148,7 @@ class Room{
 		//
 		// 	grates.push(new Grate(this.cannon,this.three,pos));
 		// }
-		
+
 		grates.push(new Grate(cannon,three,{x:-13,y:0.01,z:-10})); //.01 - wallHeight
 		grates.push(new Grate(cannon,three,{x:13,y:0.01,z:5})); //.01 - wallHeight
 		grates.push(new Grate(cannon,three,{x:8,y:0.01,z:-17})); //.01 - wallHeight
