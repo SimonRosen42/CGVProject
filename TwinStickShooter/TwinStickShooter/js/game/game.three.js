@@ -151,7 +151,7 @@ window.game.three = function() {
         	//set up camera
             _three.camera = new THREE.PerspectiveCamera( _three.fov, window.innerWidth / window.innerHeight, _three.near, _three.far );
             _three.camera.up.set(0,1,0); //makes sure up vector is along y-axis
-            _three.camera.position.set(0,10,20);
+            _three.camera.position.set(0,30,20);
             _three.camera.lookAt(0,0,0);
         },
         setupScene: function() {
@@ -163,7 +163,7 @@ window.game.three = function() {
         	_three.renderer = new THREE.WebGLRenderer({antialias: true}); //setup renderer with antialiasing
         	//set up shadows
             _three.renderer.shadowMap.enabled = true;
-            _three.renderer.shadowMap.type = THREE.BasicShadowMap;
+            _three.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             _three.renderer.setSize( window.innerWidth, window.innerHeight );
             _three.renderer.setClearColor( 0x222222, 1 );
             document.body.appendChild( _three.renderer.domElement );
@@ -208,87 +208,6 @@ window.game.three = function() {
 			_three.camera.updateProjectionMatrix();
 			_three.renderer.setSize(window.innerWidth, window.innerHeight);
 		}
-		//loadModel: function(url) {
-		//	var loader = new THREE.GLTFLoader();
-		//	loader.load(url, function (gltf){
-//
-		//		model = gltf.asset;
-		//		_three.scene.add(model);
-//
-		//	}, undefined, function ( error ) {
-//
-		//		console.log( error );
-//
-		//	} );
-		//},
-		//createModel: function(jsonData, scale, materials, isGeometry) {
-		//	// Variables for JSONLoader and imported model data
-		//	var loader = new THREE.GLTFLoader();
-		//	var gltfModel;
-		//	var meshMaterial;
-		//	var model = {};
-////
-		//	_three.loadModel('models/solder1.glb');
-			// Create the Cannon.js geometry for the imported 3D model
-			//_three.createCannonGeometry(jsonModel.geometry, scale);
-			// Generate the halfExtents that are needed for Cannon.js
-			//model.halfExtents = _three.createCannonHalfExtents(jsonModel.geometry);
-
-			// Check if materials is set
-			//if (materials) {
-			//	// If materials is an array, assign each material to the corresponding imported material
-			//	if (materials.length) {
-			//		// Iterate through the imported materials and assing from material array if array
-			//		if (jsonModel.materials) {
-			//			for (var i = 0; i < jsonModel.materials.length; i++) {
-			//				jsonModel.materials[i] = materials[i];
-			//			}
-//
-			//			// Create a multi-face material if array bigger than 0
-			//			meshMaterial = new THREE.MeshFaceMaterial(jsonModel.materials);
-			//		}
-			//	} else {
-			//		// Use and assign the defined material directly if not array
-			//		meshMaterial = materials;
-			//	}
-			//} else {
-			//	// Create a multi-face material
-			//	if (jsonModel.materials) {
-			//		meshMaterial = new THREE.MeshFaceMaterial(jsonModel.materials);
-			//	}
-			//}
-
-			// Assign the material(s) to the created mesh
-			//model.mesh = new THREE.Mesh(jsonModel.geometry, meshMaterial);
-//
-			//// Return an object containing a mesh and its halfExtents
-			//return model;
-		//},
-		//createCannonGeometry: function(geometry, scale) {
-		//	// Get the bounding box for the provided geometry
-		//	geometry.computeBoundingBox();
-//
-		//	// Center the imported model so the axis-aligned bounding boxes (AABB) and bounding spheres are generated correctly by Cannon.js
-		//	var translateX = -((geometry.boundingBox.size().x / 2) + geometry.boundingBox.min.x);
-		//	var translateY = -((geometry.boundingBox.size().y / 2) + geometry.boundingBox.min.y);
-		//	var translateZ = -((geometry.boundingBox.size().z / 2) + geometry.boundingBox.min.z);
-//
-		//	// Apply various matrix transformations to translate, rotate and scale the imported model for the Cannon.js coordinate system
-		//	geometry.applyMatrix(new THREE.Matrix4().makeTranslation(translateX, translateY, translateZ));
-		//	geometry.applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2));
-		//	geometry.applyMatrix(new THREE.Matrix4().makeScale(scale, scale, scale));
-		//},
-		//createCannonHalfExtents: function(geometry) {
-		//	// The final bounding box also exists so get its dimensions
-		//	geometry.computeBoundingBox();
-//
-		//	// Return a Cannon vector to define the halfExtents
-		//	return new CANNON.Vec3(
-		//		(geometry.boundingBox.max.x - geometry.boundingBox.min.x) * 0.5,
-		//		(geometry.boundingBox.max.y - geometry.boundingBox.min.y) * 0.5,
-		//		(geometry.boundingBox.max.z - geometry.boundingBox.min.z) * 0.5
-		//	);
-		//}
 	};
 
 	return _three;

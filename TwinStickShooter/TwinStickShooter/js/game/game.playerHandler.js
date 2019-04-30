@@ -160,12 +160,13 @@ class Projectile {
 }
 
 class Player { //turn into class
-	constructor(controller, enemyHandler, index) {
+	constructor(controller, enemyHandler, index, uiHandler) {
 
 		this.index = index;
 		this.controller = controller;
 		this.weapon = null; //weapon holder
 		this.enemyHandler = enemyHandler;
+		this.uiHandler = uiHandler;
 		//mesh, body and shape of collider
 		this.mesh = null;
 		this.shape = null;
@@ -189,6 +190,9 @@ class Player { //turn into class
 		// Camera offsets behind the player (horizontally and vertically)
 		this.cameraOffsetH = 380;
 		this.cameraOffsetV = 280;
+		this.health;
+		this.ammo;
+	
 		// Keyboard configuration for game.events.js (controlKeys must be associated to game.events.keyboard.keyCodes)
 		this.controlKeys = {
 			forward: "w",
@@ -286,25 +290,9 @@ class Player { //turn into class
 
 			self.mesh = cannon.getMeshFromBody(self.body);
 			self.weapon = new Weapon(self, cannon);
-
+			self.uiHandler.addPlayer(self);
 			self.hasLoaded = true;
 		})
-
-		//this.mesh.castShadow = true;
-		//this.mesh.receiveShadow = true;
-		// Create a HingeConstraint to limit player's air-twisting - this needs improvement
-		//this.orientationConstraint = new CANNON.HingeConstraint(this.body, new CANNON.Vec3(0, 0, 0), [new CANNON.Vec3(0, 0, 1), this.body, new CANNON.Vec3(0, 0, 1), new CANNON.Vec3(0, 0, 1)]);
-		//cannon.world.addConstraint(this.orientationConstraint);
-		// this.body.postStep = function() { //function to run after body equations
-		// };
-		// Collision event listener for the jump mechanism
-		// this.body.addEventListener("collide", function(event) {
-		// 	// Checks if player's is on ground
-		// 	if (!this.isGrounded) {
-		// 		 Ray intersection test to check if player is colliding with an object beneath him
-		// 		this.isGrounded = (new CANNON.Ray(this.mesh.position, new CANNON.Vec3(0, 0, -1)).intersectBody(event.contact.bi).length > 0);
-		// 	}
-		// });
 	}
 
 	playWalkingAnimation() {
@@ -419,7 +407,7 @@ window.game.playerHandler = function () {
 		player: [],
 
 		addPlayer: function(controller) {
-			var temp = new Player(controller, this.enemyHandler, 1);
+			var temp = new Player(controller, this.enemyHandler, this.players+1, this.ui);
 			temp.create(_playerHandler.cannon, _playerHandler.three);
 			_playerHandler.players++;
 		  	_playerHandler.player.push(temp);
