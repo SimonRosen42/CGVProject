@@ -12,7 +12,6 @@ class  playerUI {
 	
 	}
 	
-	
 	create(three){
 		var geometry = new THREE.RingGeometry( 3, 5, 32 );
 		var material = new THREE.MeshBasicMaterial( { color: 'white', side: THREE.DoubleSide } );
@@ -67,27 +66,23 @@ class  playerUI {
 
 	makeHealthBar(three) {
 		var health = 0;
+		var colour;
 		if (this.player.health > 0) health = this.player.health;
 		else {
 			three.scene.remove(this.healthBar);
 			three.scene.remove(this.ammoBar);
 			return;
 		}
-		if (this.player.health > 5){
-			colour = 'green';
-		}
-		else if(this.player.health<5 && this.player.health>3){
 
-				colour = '#808000';
-		}
-
-		else if(this.player.health < 3){
-
-			colour = 'red';
+		switch (true) {
+			case this.player.health > 7: colour = 'green'; break;
+			case this.player.health >5: colour = 'yellow'; break;
+			case this.player.health >3: colour = 'orange'; break;
+			default: colour = 'red'; break;
 		}
 		var	maxArcAngle = (health/10) * 360;
 		var geometry = new THREE.RingGeometry(1,1.5,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
-		var material = new THREE.MeshBasicMaterial({color: 'green', side: THREE.DoubleSide}	);
+		var material = new THREE.MeshBasicMaterial({color: colour, side: THREE.DoubleSide}	);
 		three.scene.remove(this.healthBar);
 		this.healthBar = new THREE.Mesh(geometry,material);
 		this.healthBar.receiveShadow= true;
@@ -109,8 +104,6 @@ class  playerUI {
 window.game = window.game || {};
 
 window.game.ui = function() {
-	
-	
 	
 	var _ui = {
 		three: null,

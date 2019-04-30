@@ -22,7 +22,7 @@ class Level {
 		var roomPos = {x: 0, y: wallHeight, z:0}
 		var doorPos = new Array({x: 0, y: 0, z: 2},{x: 0, y: 0, z: 2}, null, null) //note these are in respect to the room's origin
 
-		var room = new Room(RoomType.Start, roomPos, 10, 10, doorPos)
+		var room = new Room(RoomType.Start, roomPos, 20, 20, doorPos)
 		room.create(cannon,three)
 	}
 }

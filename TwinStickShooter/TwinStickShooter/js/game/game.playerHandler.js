@@ -369,7 +369,7 @@ class Player { //turn into class
 	}
 
 	processUserInput(cannon, controllerHandler) {
-		if (this.controller != null) { //controller connected
+		if (this.controller != null && this.health > 0 ) { //controller connected
 			this.moveWithAxis(this.controller.axes[this.axisCode.leftHorizontal],this.controller.axes[this.axisCode.leftVertical]);
 			this.rotateOnAxis(this.controller.axes[this.axisCode.rightHorizontal],this.controller.axes[this.axisCode.rightVertical],cannon);
 			if (this.controller.pressed[this.controllerCodes.R1]) {
@@ -381,7 +381,8 @@ class Player { //turn into class
 	takeDamage() {
 		this.health--;
 		if (this.health <= 0) {
-			console.log("dead");
+			this.enemyHandler.cannon.removeVisual(this.body);
+			this.hasLoaded = false;
 		}
 	}
 

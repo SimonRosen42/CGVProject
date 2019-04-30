@@ -256,6 +256,8 @@ class Enemy {
 				if (this.state == enemyState.WALK && magnitude < 3) {
 					this.attack();
 				}
+			} else {
+				this.state = enemyState.IDLE;
 			}
 
 			if (this.state == enemyState.ENTER) {

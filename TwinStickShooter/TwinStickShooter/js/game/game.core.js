@@ -56,7 +56,7 @@ window.game.core = function () {
 		start: function() {
 			_clock = new THREE.Clock(true);
 			_clock.start();
-
+			_levelHandler.create();
 			_game.loop();
 		},
 		initComponents: function (options) {
