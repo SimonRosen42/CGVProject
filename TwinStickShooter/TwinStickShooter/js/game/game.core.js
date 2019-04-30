@@ -21,9 +21,10 @@ window.game.core = function () {
 		destroy: function() {
 			// Pause animation frame loop
 			window.cancelAnimationFrame(_animationFrameLoop);
-
+			_ui.destroy();
 			// Destroy THREE.js scene and Cannon.js world and recreate them
 			_cannon.destroy();
+
 			_three.reset(_cannon);
 			//delete all enemies and players
 			_playerHandler.destroy();
@@ -55,7 +56,7 @@ window.game.core = function () {
 		start: function() {
 			_clock = new THREE.Clock(true);
 			_clock.start();
-
+			_levelHandler.create();
 			_game.loop();
 		},
 		initComponents: function (options) {
@@ -67,15 +68,18 @@ window.game.core = function () {
 			_controllerHandler = window.game.controllerHandler();
 			_enemyHandler = window.game.enemyHandler();
 			_playerHandler = window.game.playerHandler();
+			_levelHandler = window.game.levelHandler();
 			_options = options;
 			// Initialize components with options
 			_controllerHandler.init(_playerHandler, _ui);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui,_enemyHandler);
+			_levelHandler.init(_cannon,_three);
 			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
 			_events.init();
 			_ui.init(_three);
 			_cannon.init(_three);
 			_three.init(_cannon, _options);
+			_levelHandler.create();
 			_game.start(options);
 			for (var i = 0; i < 7; i++) {
 				var xP = (Math.random()-0.5)*20;
@@ -136,6 +140,7 @@ window.game.core = function () {
 	var _animationFrameLoop;
 	var _enemyHandler;
 	var _playerHandler;
+	var _levelHandler;
 	var _options;
 	var _clock;
 

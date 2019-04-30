@@ -90,8 +90,8 @@ window.game.three = function() {
             		z: 0
             	},
             	rotation: [new CANNON.Vec3(1,0,0), -Math.PI/2],
-            	geometry: new THREE.PlaneGeometry( 300, 300, 50, 50 ),
-            	meshMaterial: new THREE.MeshLambertMaterial({ color: 0xdddddd }),
+            	geometry: new THREE.PlaneGeometry( 40, 40, 50, 50 ),
+            	meshMaterial: new THREE.MeshLambertMaterial({ color: 0xdddddd, opacity: 0.8, transparent:true }),
             	receiveShadow: true,
             	castShadow: false,
             	material: cannon.groundMaterial,
@@ -151,7 +151,7 @@ window.game.three = function() {
         	//set up camera
             _three.camera = new THREE.PerspectiveCamera( _three.fov, window.innerWidth / window.innerHeight, _three.near, _three.far );
             _three.camera.up.set(0,1,0); //makes sure up vector is along y-axis
-            _three.camera.position.set(0,30,20);
+            _three.camera.position.set(0,40,50);
             _three.camera.lookAt(0,0,0);
         },
         setupScene: function() {
@@ -180,7 +180,7 @@ window.game.three = function() {
             light.castShadow = true;
 
             light.shadow.camera.near = 20;
-            light.shadow.camera.far = 50;
+            light.shadow.camera.far = 100;
             light.shadow.camera.fov = 45;
             light.shadowMapBias = 0.1;
             light.shadowMapDarkness = 0.7;

@@ -12,7 +12,6 @@ class  playerUI {
 	
 	}
 	
-	
 	create(three){
 		var geometry = new THREE.RingGeometry( 3, 5, 32 );
 		var material = new THREE.MeshBasicMaterial( { color: 'white', side: THREE.DoubleSide } );
@@ -31,16 +30,18 @@ class  playerUI {
 	}
 	// methods
 	update(three){
-		
-		this.makeHealthBar(three);
-		this.makeAmmoBar(three);
-
+		if (this.player != null) {
+			this.makeAmmoBar(three);
+			this.makeHealthBar(three);
+		} else {
+			this.removeBars(three);
+		}
 	}
 
 	makeAmmoBar(three) {
 		if (this.player.weapon.reloading) {
 			var	maxArcAngle = (this.player.weapon.reloadRateClock.getElapsedTime()/this.player.weapon.reloadRate) * 360;
-			var geometry = new THREE.RingGeometry(0.5,1,32,1,0,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
+			var geometry = new THREE.RingGeometry(0.5,1,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
 			var material = new THREE.MeshBasicMaterial({color: 0xe1e1e1, side: THREE.DoubleSide}	);
 			three.scene.remove(this.ammoBar);
 			this.ammoBar = new THREE.Mesh(geometry,material);
@@ -52,7 +53,7 @@ class  playerUI {
 			var magazine = 0;
 			if (this.player.weapon.magazine > 0) magazine = this.player.weapon.magazine;
 			var	maxArcAngle = (magazine/this.player.weapon.magazineMax) * 360;
-			var geometry = new THREE.RingGeometry(0.5,1,32,1,0,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
+			var geometry = new THREE.RingGeometry(0.5,1,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
 			var material = new THREE.MeshBasicMaterial({color: 'white', side: THREE.DoubleSide}	);
 			three.scene.remove(this.ammoBar);
 			this.ammoBar = new THREE.Mesh(geometry,material);
@@ -65,27 +66,23 @@ class  playerUI {
 
 	makeHealthBar(three) {
 		var health = 0;
+		var colour;
 		if (this.player.health > 0) health = this.player.health;
 		else {
 			three.scene.remove(this.healthBar);
 			three.scene.remove(this.ammoBar);
 			return;
 		}
-		if (this.player.health > 5){
-			colour = 'green';
-		}
-		else if(this.player.health<5 && this.player.health>3){
 
-				colour = '#808000';
-		}
-
-		else if(this.player.health < 3){
-
-			colour = 'red';
+		switch (true) {
+			case this.player.health > 7: colour = 'green'; break;
+			case this.player.health >5: colour = 'yellow'; break;
+			case this.player.health >3: colour = 'orange'; break;
+			default: colour = 'red'; break;
 		}
 		var	maxArcAngle = (health/10) * 360;
-		var geometry = new THREE.RingGeometry(1,1.5,32,1,0,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
-		var material = new THREE.MeshBasicMaterial({color: 'green', side: THREE.DoubleSide}	);
+		var geometry = new THREE.RingGeometry(1,1.5,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
+		var material = new THREE.MeshBasicMaterial({color: colour, side: THREE.DoubleSide}	);
 		three.scene.remove(this.healthBar);
 		this.healthBar = new THREE.Mesh(geometry,material);
 		this.healthBar.receiveShadow= true;
@@ -93,6 +90,11 @@ class  playerUI {
 		this.healthBar.rotation.set(Math.PI/2,0,0);
 		three.scene.add(this.healthBar);
 	}
+
+	removeBars(three) {
+		three.scene.remove(this.healthBar);
+		three.scene.remove(this.ammoBar);
+	} 
 }
 
 
@@ -102,8 +104,6 @@ class  playerUI {
 window.game = window.game || {};
 
 window.game.ui = function() {
-	
-	
 	
 	var _ui = {
 		three: null,
@@ -129,7 +129,11 @@ window.game.ui = function() {
 			temp.create(_ui.three);
 		},
 		destroy: function () {
-
+			for (let i = 0; i < _ui.elements.playerUIData.length; i++) {
+				var p = _ui.elements.playerUIData[i];
+				p.player = null;
+			}
+			playerUIData = [];
 		},
 		update: function(three){
 			for (let i = 0; i < _ui.elements.playerUIData.length; i++) {
