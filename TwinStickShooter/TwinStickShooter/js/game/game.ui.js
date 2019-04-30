@@ -71,6 +71,18 @@ class  playerUI {
 			three.scene.remove(this.ammoBar);
 			return;
 		}
+		if (this.player.health > 5){
+			colour = 'green';
+		}
+		else if(this.player.health<5 && this.player.health>3){
+
+				colour = '#808000';
+		}
+
+		else if(this.player.health < 3){
+
+			colour = 'red';
+		}
 		var	maxArcAngle = (health/10) * 360;
 		var geometry = new THREE.RingGeometry(1,1.5,32,1,0,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
 		var material = new THREE.MeshBasicMaterial({color: 'green', side: THREE.DoubleSide}	);
