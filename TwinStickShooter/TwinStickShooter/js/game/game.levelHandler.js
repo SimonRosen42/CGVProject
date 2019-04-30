@@ -293,7 +293,7 @@ window.game.levelHandler = function () {
 	var _levelHandler = {
 		cannon: null,
 		three: null,
-
+		gratez: grates,
 		//initialise
 		init: function (c, t) {
 			_levelHandler.cannon = c;

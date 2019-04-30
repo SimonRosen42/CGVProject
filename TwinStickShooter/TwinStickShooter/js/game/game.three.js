@@ -100,7 +100,7 @@ window.game.three = function() {
             });
 		},
 		setupSkybox() {
-
+			//load skybox
 			var video = document.createElement('video');
 			video.src = "models/stars.mp4";
 			video.autoplay = true;

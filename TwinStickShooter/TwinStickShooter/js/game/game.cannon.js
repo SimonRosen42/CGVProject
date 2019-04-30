@@ -43,7 +43,7 @@ window.game.cannon = function() {
 		// Methods
 		init: function(t) {
 			_cannon.three = t;
-			_cannon.world = new CANNON.World();
+			_cannon.world = new CANNON.World(); //initialize cannon world and physics solver
             _cannon.world.quatNormalizeSkip = 0;
             _cannon.world.quatNormalizeFast = false;
 
@@ -159,7 +159,7 @@ window.game.cannon = function() {
 			return body;
 		},
 
-		applyCollisionGroups (body, group, masks) {
+		applyCollisionGroups (body, group, masks) { //apply collision mask in array format and turn into bitwise or
 			var mask;
 			if (masks.length > 1) {
 				mask = masks[0];
@@ -171,7 +171,7 @@ window.game.cannon = function() {
 			body.collisionFilterMask = mask;
 		},
 
-		getMeshFromBody: function(body) {
+		getMeshFromBody: function(body) { //get mesh from body
 			var bodyCount = _cannon.bodies.length;
 				for (var j = 0; j < bodyCount; j++){
 					if (body == _cannon.bodies[j]) {

@@ -316,12 +316,13 @@ window.game.enemyHandler = function() {
 		three: null,
 		game: null,
 		playerHandler: null,
+		levelHandler: null,
 		enemies: [],
 		maxEnemies: 100,
 		maxCurrentEnemies: 5,
 		spawnClock: new THREE.Clock(),
 
-		addEnemy: function(position) {
+		addEnemy: function(position) { //add enemy and load model
 			var enemy = new Enemy(_enemyHandler.numEnemies);
 			var filePath = "models/zombie.gltf";
 			enemy.create(_enemyHandler.cannon, _enemyHandler.three, position, filePath);
@@ -329,7 +330,7 @@ window.game.enemyHandler = function() {
 			_enemyHandler.numEnemies++;
 		},
 
-		removeEnemy: function(enemy) {
+		removeEnemy: function(enemy) { //remove enemy and destroy mesh
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
 				if (_enemyHandler.enemies[i].index == enemy.index) {
 					_enemyHandler.enemies[i].destroy(_enemyHandler.cannon);
@@ -344,12 +345,18 @@ window.game.enemyHandler = function() {
 			}
 		},
 
-		updateEnemies: function(dt) {
-			if (_enemyHandler.numEnemies < this.maxEnemies) {
+		updateEnemies: function(dt) { //update enemies
+			if (_enemyHandler.numEnemies < this.maxEnemies) { //spawn enemies at respective room spawn points
 				if (_enemyHandler.enemies.length < this.maxCurrentEnemies * _enemyHandler.playerHandler.player.length) {
 					if (this.spawnClock.getElapsedTime() > 1) {
 						this.spawnClock.start();
-						this.addEnemy(new THREE.Vector3(10,0,10));
+						console.log(this.levelHandler);
+						var grates = this.levelHandler.gratez;
+						console.log(grates);
+						var min = Math.ceil(0);
+						var max = Math.floor(grates.length);
+    					var temp = Math.floor(Math.random() * (max - min + 1)) + min;
+						this.addEnemy(new THREE.Vector3(grates[temp].pos.x,grates[temp].pos.y,grates[temp].pos.z));
 					}
 				}
 			} 
@@ -382,11 +389,12 @@ window.game.enemyHandler = function() {
 			_enemyHandler.numEnemies = 0;
 		},
 
-		init: function(c,t,g,ph) {
+		init: function(c,t,g,ph,lh) {
 			_enemyHandler.cannon = c;
 			_enemyHandler.three = t;
 			_enemyHandler.game = g;
 			_enemyHandler.playerHandler = ph;
+			_enemyHandler.levelHandler = lh;
 			_enemyHandler.spawnClock.start();
 		}
 	}

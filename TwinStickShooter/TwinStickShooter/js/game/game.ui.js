@@ -12,7 +12,7 @@ class  playerUI {
 	
 	}
 	
-	create(three){
+	create(three){ //initial set up of health and ammo bar
 		var geometry = new THREE.RingGeometry( 3, 5, 32 );
 		var material = new THREE.MeshBasicMaterial( { color: 'white', side: THREE.DoubleSide } );
 		this.healthBar = new THREE.Mesh( geometry, material );
@@ -38,8 +38,8 @@ class  playerUI {
 		}
 	}
 
-	makeAmmoBar(three) {
-		if (this.player.weapon.reloading) {
+	makeAmmoBar(three) { 
+		if (this.player.weapon.reloading) { //reloading animation bar
 			var	maxArcAngle = (this.player.weapon.reloadRateClock.getElapsedTime()/this.player.weapon.reloadRate) * 360;
 			var geometry = new THREE.RingGeometry(0.5,1,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
 			var material = new THREE.MeshBasicMaterial({color: 0xe1e1e1, side: THREE.DoubleSide}	);
@@ -49,8 +49,8 @@ class  playerUI {
 			this.ammoBar.position.set(this.player.mesh.position.x,this.player.mesh.position.y-1.5,this.player.mesh.position.z);
 			this.ammoBar.rotation.set(Math.PI/2,0,0);
 			three.scene.add(this.ammoBar);
-		} else {
-			var magazine = 0;
+		} else { //bullet magazine bar animation
+			var magazine = 0; 
 			if (this.player.weapon.magazine > 0) magazine = this.player.weapon.magazine;
 			var	maxArcAngle = (magazine/this.player.weapon.magazineMax) * 360;
 			var geometry = new THREE.RingGeometry(0.5,1,32,1,-Math.PI/2,Math.PI*2 - (360 - maxArcAngle)/360*Math.PI*2);
@@ -64,7 +64,7 @@ class  playerUI {
 		}
 	}
 
-	makeHealthBar(three) {
+	makeHealthBar(three) { //create health bar
 		var health = 0;
 		var colour;
 		if (this.player.health > 0) health = this.player.health;
@@ -91,7 +91,7 @@ class  playerUI {
 		three.scene.add(this.healthBar);
 	}
 
-	removeBars(three) {
+	removeBars(three) { //remove all bars
 		three.scene.remove(this.healthBar);
 		three.scene.remove(this.ammoBar);
 	} 

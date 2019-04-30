@@ -39,7 +39,7 @@ class controller {
 
 			
 
-			poll() {
+			poll() { //poll controller buttons
 				var flag = false;
 				for (var i = 0; i < this.gamePad.buttons.length; i++) {
 	      			var val = this.gamePad.buttons[i].value;
@@ -71,13 +71,13 @@ window.game.controllerHandler = function () {
 	  		_controllerHandler.addgamepad(e.gamepad);
 		},
 
-		addgamepad: function(gamepad) {
+		addgamepad: function(gamepad) { //add gamepad
 			var temp = new controller(gamepad, gamepad.index);
 			_controllerHandler.controllers++;
 		  	_controllerHandler.controller.push(temp);
 		},
 
-		getControllerByPlayer: function(playerNumber) {
+		getControllerByPlayer: function(playerNumber) { //detect controller using player number
 			for (var i = 0; i < _controllerHandler.controller.length; i++) {
 				if (_controllerHandler.controller[i] != null){
 					if (_controllerHandler.controller[i].player == playerNumber) {
@@ -92,7 +92,7 @@ window.game.controllerHandler = function () {
 		  	_controllerHandler.removegamepad(e.gamepad);
 		},
 
-		removegamepad: function(gamepad) {
+		removegamepad: function(gamepad) { //remove gamepad
 		  	for (var i = 0; i < _controllerHandler.controller.length; i++) {
 		  		if (_controllerHandler.controller[i].gamepadIndex == gamepad.index) {
 		  			_controllerHandler.players--;
@@ -103,7 +103,7 @@ window.game.controllerHandler = function () {
 		  	}
 		},
 
-		updateStatus: function() {
+		updateStatus: function() { //update controllers and poll buttons
 		  _controllerHandler.scangamepads();
 
 		  var j;

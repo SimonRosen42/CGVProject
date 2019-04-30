@@ -73,7 +73,7 @@ window.game.core = function () {
 			_controllerHandler.init(_playerHandler, _ui);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui,_enemyHandler);
 			_levelHandler.init(_cannon,_three);
-			_enemyHandler.init(_cannon,_three,_game,_playerHandler);
+			_enemyHandler.init(_cannon,_three,_game,_playerHandler, _levelHandler);
 			_events.init();
 			_ui.init(_three);
 			_cannon.init(_three);
@@ -100,6 +100,7 @@ window.game.core = function () {
 				//	if (!_events.keyboard.pressed["w"])
 				//		_playerHandler.addPlayer();
 				//}
+				//debug kkeys 
 				if (_events.keyboard.pressed["leftArrow"]) {
 					_three.camera.position.set(_three.camera.position.x+0.1,_three.camera.position.y,_three.camera.position.z);
 					_three.camera.lookAt(0,0,0);
