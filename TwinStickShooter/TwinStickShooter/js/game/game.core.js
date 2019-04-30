@@ -46,7 +46,6 @@ window.game.core = function () {
 			//_playerUI.update();
 			// Render visual scene
 			_three.render();
-			
 		},
 		reset: function() {
 			_game.destroy();

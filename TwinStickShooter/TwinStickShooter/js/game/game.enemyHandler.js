@@ -317,15 +317,16 @@ window.game.enemyHandler = function() {
 		game: null,
 		playerHandler: null,
 		enemies: [],
+		maxEnemies: 100,
+		maxCurrentEnemies: 3,
+		spawnClock: new THREE.Clock(),
 
 		addEnemy: function(position) {
 			var enemy = new Enemy(_enemyHandler.numEnemies);
-
 			var filePath = "models/zombie.gltf";
 			enemy.create(_enemyHandler.cannon, _enemyHandler.three, position, filePath);
 			_enemyHandler.enemies.push(enemy);
 			_enemyHandler.numEnemies++;
-
 		},
 
 		removeEnemy: function(enemy) {
@@ -333,15 +334,20 @@ window.game.enemyHandler = function() {
 				if (_enemyHandler.enemies[i].index == enemy.index) {
 					_enemyHandler.enemies[i].destroy(_enemyHandler.cannon);
 					_enemyHandler.enemies.splice(i, 1);
-					_enemyHandler.numEnemies--;
 					return;
 				}
 			}
 		},
 
 		updateEnemies: function(dt) {
-
-			// update players (player coordinates may have changed)
+			if (_enemyHandler.numEnemies < this.maxEnemies) {
+				if (_enemyHandler.enemies.length < this.maxCurrentEnemies * _enemyHandler.playerHandler.player.length) {
+					if (this.spawnClock > 1) {
+						this.spawnClock.start();
+					}
+				}
+			}
+			// update enemies
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
 				_enemyHandler.enemies[i].update(_enemyHandler.playerHandler, dt);
 				if (_enemyHandler.enemies[i].state == enemyState.DEADDONE) {
@@ -375,6 +381,7 @@ window.game.enemyHandler = function() {
 			_enemyHandler.three = t;
 			_enemyHandler.game = g;
 			_enemyHandler.playerHandler = ph;
+			_enemyHandler.spawnClock.start();
 		}
 	}
 

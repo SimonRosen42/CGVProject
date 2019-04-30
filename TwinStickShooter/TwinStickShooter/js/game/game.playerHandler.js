@@ -177,7 +177,7 @@ class Player { //turn into class
 		// Player mass which affects other rigid bodies in the world
 		this.mass = 3;
 		// Configuration for player speed
-		this.speed = 5;
+		this.speed = 2.5;
 		this.health = 10;
 
 		// animation variables
@@ -300,7 +300,6 @@ class Player { //turn into class
 			this.currentAction = this.mixer.clipAction(this.walkingAnimation);
 			this.currentAction.loop = THREE.LoopRepeat;
 			this.currentAction.play();
-			console.log("playing");
 		}
 	}
 

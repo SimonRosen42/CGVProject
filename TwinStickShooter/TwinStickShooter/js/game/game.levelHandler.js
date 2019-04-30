@@ -240,7 +240,7 @@ class Wall{
 			},
 			castShadow: true,
 			collisionGroup: cannon.collisionGroup.solids,
-			collisionFilter: cannon.collisionGroup.solids | cannon.collisionGroup.player | cannon.collisionGroup.enemy
+			collisionFilter: cannon.collisionGroup.solids | cannon.collisionGroup.player | cannon.collisionGroup.enemy// | cannon.collisionGroup.projectile
 		});
 		this.mesh = cannon.getMeshFromBody(this.body);
 
@@ -282,7 +282,7 @@ class Door{
 			},
 			castShadow: false,
 			collisionGroup: cannon.collisionGroup.solids,
-			collisionFilter: cannon.collisionGroup.solids | cannon.collisionGroup.player | cannon.collisionGroup.enemy
+			collisionFilter: cannon.collisionGroup.solids | cannon.collisionGroup.player | cannon.collisionGroup.enemy// | cannon.collisionGroup.projectile
 		});
 		this.mesh = cannon.getMeshFromBody(this.body);
 	}
