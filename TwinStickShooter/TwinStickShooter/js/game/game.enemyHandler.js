@@ -75,7 +75,7 @@ class Enemy {
 	    this.lastAngle = window.game.helpers.cartesianToPolar(rand1,rand2).angle;
 	    var self = this;
 	    loader.load(gltfFilePath,
-	    	function(gltf) {
+	    	function(gltf) { //load enemy model
 
 	    	gltf.scene.scale.set(0.5,0.5,0.5);
 
@@ -114,7 +114,7 @@ class Enemy {
 					self.state = enemyState.DEADDONE;
 				}
 			})
-			self.body = new cannon.createBody({
+			self.body = new cannon.createBody({ //create enemy body and mesh in cannon
 				mass: self.mass,
 				shape: self.shape,
 		    	mesh: self.model,
@@ -151,7 +151,7 @@ class Enemy {
 		// } );
 	}
 
-	switchCurrentAnimation(animationEnumKey, once) {
+	switchCurrentAnimation(animationEnumKey, once) { //switch current animation
 		if (this.currentAnimation != this.animations[animationEnumKey]) {
 			if (this.currentAnimation != null) this.stopCurrentAnimation();
 			this.currentAnimation = this.animations[animationEnumKey];
@@ -161,23 +161,23 @@ class Enemy {
 		}
 	}
 
-	playCurrentAnimation() {
+	playCurrentAnimation() { //play current animation
 		this.currentAction = this.mixer.clipAction(this.currentAnimation);
 		this.currentAction.loop = THREE.LoopRepeat;
 		this.currentAction.play();
 	}
 
-	playCurrentAnimationOnce() {
+	playCurrentAnimationOnce() { //play current animation
 		this.currentAction = this.mixer.clipAction(this.currentAnimation);
 		this.currentAction.loop = THREE.LoopOnce;
 		this.currentAction.play().reset();
 	}
 
-	stopCurrentAnimation() {
+	stopCurrentAnimation() { //stop current animation
 		this.currentAction.stop();
 	}
 
-	takeDamage(damage) {
+	takeDamage(damage) { //take damage from player weapon
 		this.health -= damage;
 		this.state = enemyState.HURT;
 	}
