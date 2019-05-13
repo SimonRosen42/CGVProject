@@ -74,7 +74,7 @@ class  playerUI {
 			return;
 		}
 
-		switch (true) {
+		switch (true) { //change health bar colour depending on remaining health
 			case this.player.health > 7: colour = 'green'; break;
 			case this.player.health >5: colour = 'yellow'; break;
 			case this.player.health >3: colour = 'orange'; break;
@@ -112,7 +112,8 @@ window.game.ui = function() {
 			// Properties for DOM elements are stored here
 			infoboxIntro: null,
 			playerUIData: [],
-			glowI: null
+			menu: null,
+			words: null
 		},
 
 		// Methods
@@ -134,6 +135,7 @@ window.game.ui = function() {
 				p.player = null;
 			}
 			playerUIData = [];
+			_ui.elements.menu.className = "hidden";
 		},
 		update: function(three){
 			for (let i = 0; i < _ui.elements.playerUIData.length; i++) {
@@ -144,6 +146,8 @@ window.game.ui = function() {
 		getElements: function () {
 			// Store the DOM elements in the elements object to make them accessible in addClass, removeClass and hasClass
 			_ui.elements.glowI = document.querySelector("#glowI");
+			_ui.elements.menu = document.querySelector("#menu");
+			_ui.elements.words = document.querySelector("#words");
 			//_ui.elements.playerUIMain = document.querySelector(playerUIMain);
 			//_ui.elements.infoboxIntro = document.querySelector("#infobox-intro");
 //			_ui.elements.playerUIMain = document.querySelector(playerUIMain);
@@ -151,29 +155,14 @@ window.game.ui = function() {
 		bindEvents: function () {
 			// Event bindings
 		},
-		glow: function(element){
-			_ui.addClass(element,"glow");
-		},
-
-		fadeOut: function (element) {
-			// Add a CSS class, fading is done via CSS3 transitions
-
-			_ui.addClass(element, "fade-out");
-		},
-		addClass: function (element, className) {
-			// Adds a class to a specified element
-			if (!_ui.hasClass(element, className)) {
-				_ui.elements[element].className = _ui.elements[element].className + " " + className;
+		showEndMenu: function(win) {
+			//_ui.removeClass("menu", "hidden");
+			_ui.elements.menu.className = "";
+			if (win) {
+				_ui.elements.words.innerHTML = "WIN";	
+			} else {
+				_ui.elements.words.innerHTML = "LOSE";
 			}
-		},
-		removeClass: function (element, className) {
-			// Removes a class from a specified element
-			var classNameRegEx = new RegExp("\\s\\b" + className + "\\b", "gi");
-			_ui.elements[element].className = _ui.elements[element].className.replace(classNameRegEx, "");
-		},
-		hasClass: function (element, className) {
-			// Checksif a specified element contains the given class name
-			return _ui.elements[element].className.match(className);
 		}
 	};
 

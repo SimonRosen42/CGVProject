@@ -4,6 +4,8 @@ class Weapon {
 	constructor(player, cannon) {
 		this.player = player;
 		this.cannon = cannon;
+
+		//handles all projectiles produced by this gun
 		this.projectiles = [];
 		this.numProjectiles = 0;
 		this.shootPosition = new CANNON.Vec3(0,0,0);
@@ -22,6 +24,7 @@ class Weapon {
 		this.update();
 	}
 
+	//update all projectiles and shooting position with player movement
 	update() {
 		this.player.body.pointToWorldFrame(new CANNON.Vec3(0,0.65,-1.8), this.shootPosition);
 		//for (var i = this.projectiles.length - 1; i >= 0; i--) {
@@ -32,12 +35,13 @@ class Weapon {
 			this.projectiles[p].update();
 		}
 
-		if (this.reloadRateClock.getElapsedTime() > this.reloadRate && this.reloading) {
+		if (this.reloadRateClock.getElapsedTime() > this.reloadRate && this.reloading) { //finish reloading
 			this.reloading = false;
 			this.magazine = this.magazineMax;
 		}
 	}
 
+	//remove projectile from weapon data
 	removeProjectile(p) {
 		for (var i = this.projectiles.length - 1; i >= 0; i--) {
 			if (this.projectiles[i].index == p.index) {
@@ -48,15 +52,16 @@ class Weapon {
 		}
 	}
 
+	//fire a projectile
 	fire(cannon) {
 		if (!this.reloading) {
-			if (this.fireRateClock.getElapsedTime() > this.fireRate) {
+			if (this.fireRateClock.getElapsedTime() > this.fireRate) { //fire rate
 				this.projectiles.push(new Projectile(this, cannon, this.numProjectiles));
 				this.numProjectiles++;
 				if (this.numProjectiles > 200) this.numProjectiles = 0;
 				this.fireRateClock.start();
 				this.magazine--;
-				if (this.magazine <= 0) {
+				if (this.magazine <= 0) { //reload if magazine empty
 					this.reloading = true;
 					this.reloadRateClock.start();
 				}
@@ -75,7 +80,7 @@ class Projectile {
 		this.index = i;
 		this.clock.start();
 		this.shootPosition = null;
-		this.body = cannon.createBody({
+		this.body = cannon.createBody({ // create rigidbody and mesh
 			mass: 1,
 			position: {
 				x: weapon.shootPosition.x,
@@ -88,7 +93,7 @@ class Projectile {
 			collisionGroup: cannon.collisionGroup.projectile,
 			collisionFilter: cannon.collisionGroup.solids // | cannon.collisionGroup.enemy
 		});
-		this.body.velocity.set(
+		this.body.velocity.set( //set initial velocity with respect to shooting position
 			(this.body.position.x - weapon.player.body.position.x)*this.speed,
 			0,
 			(this.body.position.z - weapon.player.body.position.z)*this.speed
@@ -96,31 +101,22 @@ class Projectile {
 		this.shootPosition = weapon.shootPosition;
 		//console.log(cannon.world.raycastClosest(from, to, raycastOptions, result));
 		//console.log(result.body.position);
-		this.body.addEventListener("collide", function(e){
+		this.body.addEventListener("collide", function(e){ //remove projectile if it collides with something solid
 			if (e.body.collisionFilterGroup == cannon.collisionGroup.solids) {
 				setTimeout(function() {
 					weapon.removeProjectile(this);
 				}, 0);
 			}
-		//	var enemy = weapon.player.enemyHandler.getEnemyFromBody(e.body);
-		//		if (enemy != null) {
-		//			enemy.takeDamage(2);
-		//			weapon.removeProjectile(this);
-		//		//setTimeout(function() { //have to set timeout or else removes body before end of physics frame
-        //  		//	console.log("collided with ", enemy);
-        //  		//	weapon.player.enemyHandler.removeEnemy(enemy);
-    	//		//}, 0);
-		//		}
 		});
 	}
 
 	update() {
-		this.body.position.set(
+		this.body.position.set( //prevent from dipping below shooting position's y height
 			this.body.position.x,
 			this.shootPosition.y,
 			this.body.position.z
 		);
-		this.body.velocity.set(
+		this.body.velocity.set( //keep velocity constant and 0 y axis velocity
 			this.body.velocity.x,
 			0,
 			this.body.velocity.z
@@ -129,22 +125,22 @@ class Projectile {
 		var velInFrame = totalVel*this.clock.getDelta() * 5; //optimizing raycasts to only be called initially and nearby the enemy
 		if (this.lastDistance > velInFrame * 5 || this.lastDistance <= 0) {
 			this.lastDistance -= velInFrame;
-		} else {
+		} else { //raycasts to see if collsion
 			var from = this.body.position;
 			var distance = 3 - this.clock.getElapsedTime();
 			var to = new CANNON.Vec3(from.x + this.body.velocity.x * distance, from.y, from.z + this.body.velocity.z * distance);
 			var result = new CANNON.RaycastResult();
-			var raycastOptions = {
+			var raycastOptions = { //filter for enemies
 				collisionFilterGroup: this.weapon.cannon.collisionGroup.projectile,
 				collisionFilterMask: this.weapon.cannon.collisionGroup.enemy //| this.weapon.cannon.collisionGroup.solids
 			};
 			this.weapon.cannon.world.raycastClosest(from, to, raycastOptions, result);
-			if (result.body){
-				if (result.body.collisionFilterGroup == this.weapon.cannon.collisionGroup.enemy) {
+			if (result.body){ // if collision
+				if (result.body.collisionFilterGroup == this.weapon.cannon.collisionGroup.enemy) { //collided with enemy
 					this.lastDistance = this.body.position.distanceTo(result.body.position);
 					if (this.body.position.distanceTo(result.body.position) < result.body.shapes[0].boundingSphereRadius + this.body.shapes[0].boundingSphereRadius) {
 						var enemy = this.weapon.player.enemyHandler.getEnemyFromBody(result.body);
-						if (enemy != null) {
+						if (enemy != null) { //find enemy and make them take damage
 							enemy.takeDamage(this.damage);
 							this.weapon.removeProjectile(this);
 						}
@@ -152,7 +148,7 @@ class Projectile {
 				}
 			}
 		}
-		if (this.clock.getElapsedTime() > 3) {
+		if (this.clock.getElapsedTime() > 3) { //default death timer
 			this.weapon.removeProjectile(this);
 		}
 
@@ -190,18 +186,10 @@ class Player { //turn into class
 		// Camera offsets behind the player (horizontally and vertically)
 		this.cameraOffsetH = 380;
 		this.cameraOffsetV = 280;
-		this.health;
-		this.ammo;
-	
-		// Keyboard configuration for game.events.js (controlKeys must be associated to game.events.keyboard.keyCodes)
-		this.controlKeys = {
-			forward: "w",
-			backward: "s",
-			left: "a",
-			right: "d",
-			jump: "space"
-		};
 
+		this.jumpTimer = new THREE.Clock()
+		this.jumpTimer.start();
+		//button codes for the controller
 		this.controllerCodes =  {
 			cross : 0,
 			circle : 1,
@@ -222,6 +210,7 @@ class Player { //turn into class
 			ps : 16
 		};
 
+		//axis codes for the controller
 		this.axisCode = {
 			leftHorizontal : 0,
 			leftVertical : 1,
@@ -231,18 +220,13 @@ class Player { //turn into class
 
 		this.hasLoaded = false;
 	}
-		// Methods
+	
+	//create player
 	create(cannon, three) {
-		// Create a player character based on an imported 3D model that was already loaded as JSON into game.models.player
-		//this.model = three.createModel(window.game.models.player, 12, [
-		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.cyan, shading: THREE.FlatShading }),
-		//	new THREE.MeshLambertMaterial({ color: window.game.static.colors.green, shading: THREE.FlatShading })
-		//]);
-		// Create the shape, mesh and rigid body for the player character and assign the physics material to it
-
-
+		//collider is cube
 		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
 
+		//load in the player model in glb format
 		var loader = new THREE.GLTFLoader();
 		var filePath =  "models/player" + this.index.toString() + ".glb";
 		console.log(filePath);
@@ -254,7 +238,8 @@ class Player { //turn into class
 			self.model = gltf.scene;
 
 			gltf.scene.traverse( function( node ) {
-			
+				
+				//add shadows to the model
          		if ( node instanceof THREE.SkinnedMesh ) {
          			node.castShadow = true;
          			node.receiveShadow = true;
@@ -270,6 +255,7 @@ class Player { //turn into class
 			// set walk animation
 			self.walkingAnimation = gltf.animations[0];
 			self.playWalkingAnimation();
+			//create player rigidbody
 			self.body = cannon.createBody({
 				//geometry: this.model,
 				position: {
@@ -309,25 +295,23 @@ class Player { //turn into class
 				this.currentAction.stop();
 	}
 
+	//destroy player and remove player from controller bind
 	destroy(cannon) {
 		cannon.removeVisual(this.body);
 		this.controller.player = null;
 	}
 
-	update(cannon,three,game,controllerHandler,dt) {
+	update(cannon,three,game,dt) {
 
 		if (this.hasLoaded) {
 			// Basic game logic to update player and camera
-			this.processUserInput(cannon, controllerHandler);
+			this.processUserInput(cannon);
 
 			if (this.weapon != null)
 				this.weapon.update();
 			if (this.mixer != null)
 				this.mixer.update(dt);
 			//this.updateCamera(three);
-			// Level-specific logic
-
-			this.checkGameOver(game);
 		}
 	}
 
@@ -342,6 +326,7 @@ class Player { //turn into class
 		three.camera.lookAt(this.mesh.position);
 	}
 
+	//move player on x-z plane
 	moveWithAxis(horizontal, vertical) {
 		//if (Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2)) > this.speed) {
 		this.body.velocity.set(horizontal * this.speed, this.body.velocity.y, vertical * this.speed);
@@ -354,6 +339,7 @@ class Player { //turn into class
 		//} else this.body.applyForce(new CANNON.Vec3(horizontal * this.acceleration * 100, 0, vertical * this.acceleration * 100), this.body.position);
 	}
 
+	//rotate player on y axis 
 	rotateOnAxis(horizontal, vertical, cannon) {
 		this.body.angularDamping = 0;
 		if (this.lastRotation == null) {
@@ -367,28 +353,28 @@ class Player { //turn into class
 		}
 	}
 
-	processUserInput(cannon, controllerHandler) {
-		if (this.controller != null && this.health > 0 ) { //controller connected
+	//process user input from controller
+	processUserInput(cannon) {
+		if (this.controller != null && this.health > 0 ) { //controller connected and not dead
 			this.moveWithAxis(this.controller.axes[this.axisCode.leftHorizontal],this.controller.axes[this.axisCode.leftVertical]);
 			this.rotateOnAxis(this.controller.axes[this.axisCode.rightHorizontal],this.controller.axes[this.axisCode.rightVertical],cannon);
 			if (this.controller.pressed[this.controllerCodes.R1]) {
 				this.weapon.fire(cannon);
 			}
+			if (this.controller.pressed[this.controllerCodes.cross] && this.body.velocity.y <= 0.1 && this.jumpTimer.getElapsedTime() > 1) { //jump
+				this.jumpTimer.start();
+				this.body.velocity = new CANNON.Vec3(this.body.velocity.x, 6, this.body.velocity.z)
+			}
+			if (this.controller.pressed[this.controllerCodes.start]) alert("PAUSED")
 		}
 	}
 
+	//make this player take damage from a zombie
 	takeDamage() {
 		this.health--;
 		if (this.health <= 0) {
 			this.enemyHandler.cannon.removeVisual(this.body);
 			this.hasLoaded = false;
-		}
-	}
-
-	checkGameOver(game) {
-		// Example game over mechanism which resets the game if the player is falling beneath -800
-		if (this.mesh.position.y <= -10) {
-			game.destroy();
 		}
 	}
 };
@@ -406,6 +392,7 @@ window.game.playerHandler = function () {
 
 		player: [],
 
+		//add a player by linking them to a controller
 		addPlayer: function(controller) {
 			var temp = new Player(controller, this.enemyHandler, this.players+1, this.ui);
 			temp.create(_playerHandler.cannon, _playerHandler.three);
@@ -413,20 +400,22 @@ window.game.playerHandler = function () {
 		  	_playerHandler.player.push(temp);
 		},
 
+		//updates the individual players
 		updatePlayers: function(dt) {
 			var dead = 0;
 			if (_playerHandler.player[0] != null) {
 				for (var i = _playerHandler.player.length - 1; i >= 0; i--) {
-					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,_playerHandler.controllerHandler,dt);
+					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,dt);
 					if (_playerHandler.player[i].health <= 0) dead++;
 					if (dead == this.player.length) {
-						alert("LOSE");
-						this.game.reset();
+						this.ui.showEndMenu(false);
+						//this.game.reset();
 					}
 				}
 			}
 		},
 
+		//removes player by searching for player then destroying the player, then removing him
 		removePlayer: function(p) {
 			for (var i = _playerHandler.player.length - 1; i >= 0; i--) {
 				if (_playerHandler.player[i] == p) {
@@ -438,6 +427,7 @@ window.game.playerHandler = function () {
 			}
 		},
 
+		//destroy all the players and set up the player handler for a restart
 		destroy: function() {
 			if (_playerHandler.player.length > 0) {
 				var p;
@@ -449,6 +439,7 @@ window.game.playerHandler = function () {
 			}
 		},
 
+		//initalize the links to other handlers and game
 		init: function(c,t,g,ch,ui,eh) {
 			_playerHandler.cannon = c;
 			_playerHandler.three = t;

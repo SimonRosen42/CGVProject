@@ -67,7 +67,7 @@ window.game.controllerHandler = function () {
 		controllers: 0,
 		playerHandler: null,
 
-		connecthandler: function(e) {
+		connecthandler: function(e) { //connect binding for controller connect event
 	  		_controllerHandler.addgamepad(e.gamepad);
 		},
 
@@ -88,7 +88,7 @@ window.game.controllerHandler = function () {
 			return null;
 		},	
 
-		disconnecthandler: function(e) {
+		disconnecthandler: function(e) { //disconnect binding for controller disconnect event
 		  	_controllerHandler.removegamepad(e.gamepad);
 		},
 
@@ -134,7 +134,7 @@ window.game.controllerHandler = function () {
 
 		},
 
-		scangamepads: function() {
+		scangamepads: function() { //scan gamepads and add if needed
 		  var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
 		  for (var i = 0; i < 4; i++) {
 		    if (gamepads[i]) {
@@ -154,7 +154,7 @@ window.game.controllerHandler = function () {
 		  }
 		}, 
 
-		init: function(ph) {
+		init: function(ph) { //bind functions to gamepad events
 			window.addEventListener("gamepadconnected", _controllerHandler.updateStatus);
 			window.addEventListener("gamepaddisconnected", _controllerHandler.disconnecthandler);
 			_controllerHandler.playerHandler = ph;

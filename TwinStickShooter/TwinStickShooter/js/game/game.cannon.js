@@ -71,16 +71,19 @@ window.game.cannon = function() {
             	restitution: 0.3,
             	frictionEquation: true
             });
+            //solids material for solid objects 
             _cannon.solidMaterial = new CANNON.Material("solidsMaterial");
             _cannon.createPhysicsMaterial({
             	material: _cannon.solidMaterial
             });
+            //player material that is slippery
             _cannon.playerPhysicsMaterial = new CANNON.Material("playerPhysicsMaterial");
             _cannon.createPhysicsMaterial({
             	material: _cannon.playerPhysicsMaterial,
             	friction: 0,
             	restitution: 0
             });
+            //enemy material that is slippery
             _cannon.enemyPhysicsMaterial = new CANNON.Material("enemyMaterial");
             _cannon.createPhysicsMaterial({
             	material: _cannon.enemyPhysicsMaterial,
@@ -181,12 +184,6 @@ window.game.cannon = function() {
 			return _cannon.visuals[j];
 		},
 
-		//rotateGeometry: function(geometry, axis, radians) {
-		//	if (axis.x == 1) geometry.applyMatrix( new THREE.Matrix4().makeRotationX( radians ) );
-		//	else if (axis.y == 1) geometry.applyMatrix( new THREE.Matrix4().makeRotationY( radians ) );
-		//	else if (axis.z == 1) geometry.applyMatrix( new THREE.Matrix4().makeRotationZ( radians ) );
-		//},
-
 		createPhysicsMaterial: function(options) {
 			// Create a new material and add a Cannon ContactMaterial to the world always using _cannon.playerPhysicsMaterial as basis
 			var physicsMaterial = options.material || new CANNON.Material();
@@ -269,26 +266,12 @@ window.game.cannon = function() {
 		 	var mesh;
 		 	//var submesh;
 		 	switch (shape.type){
-		 		case CANNON.Shape.types.SPHERE:
+		 		case CANNON.Shape.types.SPHERE: //convert sphere from cannon to three visual
 		 			var sphere = new THREE.SphereGeometry(shape.radius, 32, 32);
 		 			mesh = new THREE.Mesh(sphere, material);
 		 			break;
 
-		// 		case CANNON.Shape.types.PLANE:
-		// 			var geometry = new THREE.PlaneGeometry(100, 100);
-		// 			mesh = new THREE.Object3D();
-		// 			submesh = new THREE.Object3D();
-		// 			var ground = new THREE.Mesh(geometry, currentMaterial);
-		// 			ground.scale = new THREE.Vector3(1000, 1000, 1000);
-		// 			submesh.add(ground);
-
-		// 			ground.castShadow = true;
-		// 			ground.receiveShadow = true;
-
-		// 			mesh.add(submesh);
-		// 			break;
-
-		 		case CANNON.Shape.types.BOX: {
+		 		case CANNON.Shape.types.BOX: { //convert box from cannon to three visual
 		 			var box = new THREE.BoxGeometry(shape.halfExtents.x * 2,
 		 					shape.halfExtents.y * 2,
 		 					shape.halfExtents.z * 2);
@@ -324,43 +307,9 @@ window.game.cannon = function() {
             		break;
             	}
 
-		// 		case CANNON.Shape.types.COMPOUND:
-		// 			// recursive compounds
-		// 			var o3d = new THREE.Object3D();
-		// 			for(var i = 0; i<shape.childShapes.length; i++){
-
-		// 				// Get child information
-		// 				var subshape = shape.childShapes[i];
-		// 				var o = shape.childOffsets[i];
-		// 				var q = shape.childOrientations[i];
-
-		// 				submesh = _cannon.shape2mesh(subshape);
-		// 				submesh.position.set(o.x,o.y,o.z);
-		// 				submesh.quaternion.set(q.x,q.y,q.z,q.w);
-
-		// 				submesh.useQuaternion = true;
-		// 				o3d.add(submesh);
-		// 				mesh = o3d;
-		// 			}
-		// 			break;
-
 		 		default:
 		 			throw "Visual type not recognized: " + shape.type;
 			}
-
-		// 	if (mesh.children) {
-		// 		for (var i = 0; i < mesh.children.length; i++) {
-		// 			mesh.children[i].castShadow = true;
-		// 			mesh.children[i].receiveShadow = true;
-
-		// 			if (mesh.children[i]){
-		// 				for(var j = 0; j < mesh.children[i].length; j++) {
-		// 					mesh.children[i].children[j].castShadow = true;
-		// 					mesh.children[i].children[j].receiveShadow = true;
-		// 				}
-		// 			}
-		// 		}
-		// 	}
 
 	 		return mesh;
 		}

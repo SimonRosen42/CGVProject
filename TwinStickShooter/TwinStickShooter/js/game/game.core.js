@@ -73,7 +73,7 @@ window.game.core = function () {
 			_controllerHandler.init(_playerHandler, _ui);
 			_playerHandler.init(_cannon,_three,_game,_controllerHandler,_ui,_enemyHandler);
 			_levelHandler.init(_cannon,_three);
-			_enemyHandler.init(_cannon,_three,_game,_playerHandler, _levelHandler);
+			_enemyHandler.init(_cannon,_three,_game,_playerHandler, _levelHandler, _ui);
 			_events.init();
 			_ui.init(_three);
 			_cannon.init(_three);
@@ -135,7 +135,6 @@ window.game.core = function () {
 	var _three;
 	var _cannon;
 	var _ui;
-	var _playerUI;
 	var _controllerHandler;
 	var _animationFrameLoop;
 	var _enemyHandler;

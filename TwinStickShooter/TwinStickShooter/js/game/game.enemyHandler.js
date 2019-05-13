@@ -22,6 +22,7 @@ var enemyAnimation = {
 	WALK : 15
 }
 
+//enemy states
 var enemyState = {
 	ENTER : 0,
 	IDLE : 1,
@@ -182,12 +183,12 @@ class Enemy {
 		this.state = enemyState.HURT;
 	}
 
-	destroy(cannon) {
+	destroy(cannon) { //removes visual and cannon body from scene
 		cannon.removeVisual(this.body);
 	}
 
 	attack() {
-		if (this.state != enemyState.ATTACK) {
+		if (this.state != enemyState.ATTACK) { //if not attacking attack, and choose random attack animation
 			this.state = enemyState.ATTACK;
 			var rand = Math.random()*4;
 				switch (true) {
@@ -200,7 +201,7 @@ class Enemy {
 	}
 
 	die(cannon) {
-		if (this.state != enemyState.DEAD) {
+		if (this.state != enemyState.DEAD) { //if not dead, die and choose random death animation
 			this.state = enemyState.DEAD;
 			var rand = Math.random()*3;
 				switch (true) {
@@ -208,18 +209,18 @@ class Enemy {
 					case (rand < 2): this.switchCurrentAnimation(enemyAnimation.DEAD2, true); break;
 					case (rand < 3): this.switchCurrentAnimation(enemyAnimation.DEAD3, true); break;
 				}
-			this.body.collisionFilterGroup = cannon.collisionGroup.player;
+			this.body.collisionFilterGroup = cannon.collisionGroup.player; //makes them untargetable
 		}
 	}
 
 	update(playerHandler, dt) {
 
 		if (this.hasLoaded) {
-			if (this.health <= 0 && this.state != enemyState.DEAD) {
+			if (this.health <= 0 && this.state != enemyState.DEAD) { //check if dead
 				this.die(playerHandler.cannon);
 			}
 
-			if (this.mixer != null)
+			if (this.mixer != null) //update animation mixer with time
 				this.mixer.update(dt);
 			// utility function to find the straight line distance between two points
 			// in a 3D space
@@ -227,8 +228,7 @@ class Enemy {
 				return Math.sqrt(Math.pow((positionA.x - positionB.x), 2) + Math.pow((positionA.y - positionB.y), 2) + Math.pow((positionA.z - positionB.z), 2))
 			}
 
-			//if (this.body != null && this.body.position != null) {
-				// find index of player that's closest to the enemy
+			// find index of player that's closest to the enemy
 			var min = 10000000;
 			var minPlayerIndex = -1;
 			for (var i = 0; i < playerHandler.player.length; i++) {
@@ -241,7 +241,7 @@ class Enemy {
 				}
 			}
 
-			if (playerHandler.player[minPlayerIndex] != null && playerHandler.player[minPlayerIndex].hasLoaded)  {
+			if (playerHandler.player[minPlayerIndex] != null && playerHandler.player[minPlayerIndex].hasLoaded)  { //check if can attack or move towards player or idle
 				var closestPlayer = playerHandler.player[minPlayerIndex];
 				var closestPlayerPosition = closestPlayer.body.position;
 				var v = new CANNON.Vec3(closestPlayerPosition.x - this.body.position.x, 0, closestPlayerPosition.z - this.body.position.z);
@@ -250,58 +250,59 @@ class Enemy {
 				if (this.state != enemyState.HURT)
 					this.hurtDirection = direction;
 				direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
-				if (this.state == enemyState.IDLE && magnitude < 30) {
+				if (this.state == enemyState.IDLE && magnitude < 30) { //close enough to walk to
 					this.state = enemyState.WALK;
 				}
-				if (this.state == enemyState.WALK && magnitude < 3) {
+				if (this.state == enemyState.WALK && magnitude < 3) { //close enough to attack
 					this.attack();
 				}
 			} else {
 				this.state = enemyState.IDLE;
 			}
 
-			if (this.state == enemyState.ENTER) {
+			if (this.state == enemyState.ENTER) { //spawn animation
 				this.body.velocity.set(0,0,0);
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
-			} else if (this.state == enemyState.IDLE) {
+			} else if (this.state == enemyState.IDLE) { //stay idle
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
 				this.body.velocity.set(0,0,0);
 				this.switchCurrentAnimation(enemyAnimation.IDLE);
-			} else if (this.state == enemyState.WALK) {
+			} else if (this.state == enemyState.WALK) { //walk towards player
 				if (magnitude > 5) this.state = enemyState.IDLE;
 				this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
 				this.lastAngle = window.game.helpers.cartesianToPolar(direction.x,-1*direction.z).angle - Math.PI/2;
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
 				this.switchCurrentAnimation(enemyAnimation.WALK);
-			} else if (this.state == enemyState.HURT) {
-				this.body.velocity = new CANNON.Vec3(-1*this.hurtDirection.x/2,this.body.velocity.y,-1*this.hurtDirection.z/2);
-				this.hurtDirection = new CANNON.Vec3(this.hurtDirection.x*0.98, this.hurtDirection.y*0.98, this.hurtDirection.z*0.98); //damping down to zero
+			} else if (this.state == enemyState.HURT) { //hurt animation and stagger
+				if (this.hurtDirection != null) {
+					this.body.velocity = new CANNON.Vec3(-1*this.hurtDirection.x/2,this.body.velocity.y,-1*this.hurtDirection.z/2);
+					this.hurtDirection = new CANNON.Vec3(this.hurtDirection.x*0.98, this.hurtDirection.y*0.98, this.hurtDirection.z*0.98); //damping down to zero
+				}
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
 				this.switchCurrentAnimation(enemyAnimation.HURT1, true);
-			} else if (this.state == enemyState.ATTACK) {
+			} else if (this.state == enemyState.ATTACK) { //attack if haven't attacked
 				this.body.velocity.set(0,0,0);
 				this.lastAngle = window.game.helpers.cartesianToPolar(direction.x,-1*direction.z).angle - Math.PI/2;
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
 				if (this.currentAction.time > 1) {
 					this.state = enemyState.ATTACKED;
 				}
-			} else if (this.state == enemyState.DEAD) {
+			} else if (this.state == enemyState.DEAD) { //death 
 				this.body.velocity.set(0,0,0);
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
 			}
-			if (this.state == enemyState.ATTACKED) {
+			if (this.state == enemyState.ATTACKED) { //player takes damage after attack if close enough
 				if (magnitude < 4) {
 					closestPlayer.takeDamage();
 				}
 				this.state = enemyState.ATTACKDONE;
 			}
-			if (this.state == enemyState.ATTACKDONE) {
+			if (this.state == enemyState.ATTACKDONE) { //end attack animation 
 				this.body.velocity.set(0,0,0);
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
 			}
 
 		}
-		//}
 
 	}
 
@@ -317,6 +318,7 @@ window.game.enemyHandler = function() {
 		game: null,
 		playerHandler: null,
 		levelHandler: null,
+		uiHandler: null,
 		enemies: [],
 		maxEnemies: 100,
 		maxCurrentEnemies: 5,
@@ -338,37 +340,38 @@ window.game.enemyHandler = function() {
 					break;
 				}
 			}
-			console.log(_enemyHandler.numEnemies,_enemyHandler.enemies.length );
+
 			if (_enemyHandler.numEnemies >= this.maxEnemies && _enemyHandler.enemies.length == 0) {
-				alert("WIN");
-				this.game.reset();
+				this.uiHandler.showEndMenu(true);
+				//this.game.reset();
 			}
 		},
 
-		updateEnemies: function(dt) { //update enemies
+		updateEnemies: function(dt) { //update and spawn enemies
 			if (_enemyHandler.numEnemies < this.maxEnemies) { //spawn enemies at respective room spawn points
 				if (_enemyHandler.enemies.length < this.maxCurrentEnemies * _enemyHandler.playerHandler.player.length) {
 					if (this.spawnClock.getElapsedTime() > 1) {
-						this.spawnClock.start();
-						console.log(this.levelHandler);
 						var grates = this.levelHandler.gratez;
-						console.log(grates);
 						var min = Math.ceil(0);
 						var max = Math.floor(grates.length);
     					var temp = Math.floor(Math.random() * (max - min + 1)) + min;
-						this.addEnemy(new THREE.Vector3(grates[temp].pos.x,grates[temp].pos.y,grates[temp].pos.z));
+    					if (grates[temp] != null) {
+    						this.spawnClock.start();
+							this.addEnemy(new THREE.Vector3(grates[temp].pos.x,grates[temp].pos.y,grates[temp].pos.z));
+						}
 					}
 				}
 			} 
 			// update enemies
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
 				_enemyHandler.enemies[i].update(_enemyHandler.playerHandler, dt);
-				if (_enemyHandler.enemies[i].state == enemyState.DEADDONE) {
+				if (_enemyHandler.enemies[i].state == enemyState.DEADDONE) { //remove enemy if it's death animation is done
 					_enemyHandler.removeEnemy(_enemyHandler.enemies[i]);
 				}
 			}
 		},
 
+		//find and return enemy using it's cannon body
 		getEnemyFromBody: function(body) {
 			for (var i = 0; i < _enemyHandler.enemies.length; i++) {
 				if (_enemyHandler.enemies[i].body == body) {
@@ -378,6 +381,7 @@ window.game.enemyHandler = function() {
 			return null;
 		},
 
+		//destroy all enemies and reset enemyhandler
 		destroy: function() {
 
 			var e;
@@ -389,13 +393,15 @@ window.game.enemyHandler = function() {
 			_enemyHandler.numEnemies = 0;
 		},
 
-		init: function(c,t,g,ph,lh) {
+		//initialize links between handlers and game
+		init: function(c,t,g,ph,lh,ui) {
 			_enemyHandler.cannon = c;
 			_enemyHandler.three = t;
 			_enemyHandler.game = g;
 			_enemyHandler.playerHandler = ph;
 			_enemyHandler.levelHandler = lh;
 			_enemyHandler.spawnClock.start();
+			_enemyHandler.uiHandler = ui;
 		}
 	}
 

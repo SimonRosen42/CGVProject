@@ -41,40 +41,9 @@ window.game.three = function() {
             window.addEventListener( 'resize', _three.onWindowResize, false );
 
             _three.reset(cannon);
-            // Add boxes
-          //var halfExtents = new CANNON.Vec3(1,1,1);
-          //var boxShape = new CANNON.Box(halfExtents);
-          //var boxGeometry = new THREE.BoxGeometry(halfExtents.x*2,halfExtents.y*2,halfExtents.z*2);
-          //for(var i=0; i<7; i++){
-          //    var xP = (Math.random()-0.5)*20;
-          //    var yP = 1 + (Math.random()-0.5)*1;
-          //    var zP = (Math.random()-0.5)*20;
-          //    cannon.createBody({
-          //    	mass: 5,
-          //    	shape: boxShape,
-          //    	position: {
-          //    		x: xP,
-          //    		y: yP,
-          //    		z: zP
-          //    	},
-          //    	//geometry: boxGeometry,
-          //    	meshMaterial: new THREE.MeshLambertMaterial({color: 0x991199}),
-          //    	receiveShadow: false,
-          //    	castShadow: true,
-          //    	collisionGroup: cannon.collisionGroup.solids,
-          //		collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.player | cannon.collisionGroup.solids
-          //    });
-                //var boxBody = new CANNON.Body({ mass: 5 });
-                //boxBody.addShape(boxShape);
-                //var boxMesh = new THREE.Mesh( boxGeometry, material );
-                //cannon.world.add(boxBody);
-                //_three.scene.add(boxMesh);
-                //boxBody.position.set(x,y,z);
-                //boxMesh.position.set(x,y,z);
-                //boxMesh.castShadow = true;
-                //boxMesh.receiveShadow = true;
-            //}
         },
+
+        //reset script to reset three component
         reset: function(cannon) {
 			_three.setupScene();
 			_three.setupLights();
@@ -99,6 +68,7 @@ window.game.three = function() {
             	collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.player | cannon.collisionGroup.solids
             });
 		},
+
 		setupSkybox() {
 			//load skybox
 			var video = document.createElement('video');
@@ -123,29 +93,9 @@ window.game.three = function() {
 			material.side = THREE.BackSide;
 
 			var starsGeometry = new THREE.CubeGeometry( 75, 75, 75 );
-		//	var skyMaterial = new THREE.MeshBasicMaterial( materialArray );
 			var skyBox = new THREE.Mesh( starsGeometry, material);
 			skyBox.rotation.x += Math.PI / 2;
 			_three.scene.add( skyBox );
-
-			// var supGif = new SuperGif({ gif: "models/stars.gif" } );
-			// supGif.load();
-			// var gifCanvas = supGif.get_canvas();
-			//
-			// materialArray = [];
-			// for (var i = 0; i < 6; i++) {
-			// 		materialArray.push( new THREE.MeshStandardMaterial({
-			//  			map: new THREE.Texture( gifCanvas ),
-			//  			side: THREE.BackSide,
-			// 			displacementMap: material.map
-			// 		}));
-			// }
-			//
-			// var starsGeometry = new THREE.CubeGeometry( 500, 500, 500 );
-			// var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
-			// var skyBox = new THREE.Mesh( starsGeometry, skyMaterial );
-			// skyBox.rotation.x += Math.PI / 2;
-			// _three.scene.add( skyBox );
 		},
         setupCamera: function() {
         	//set up camera
@@ -179,6 +129,7 @@ window.game.three = function() {
             light.target.position.set( 0, 0, 0 );
             light.castShadow = true;
 
+            //set up shadow maps
             light.shadow.camera.near = 20;
             light.shadow.camera.far = 100;
             light.shadow.camera.fov = 45;
@@ -189,14 +140,6 @@ window.game.three = function() {
 
             //light.shadowCameraVisible = true;
             _three.scene.add( light );
-			//var hemiLight = new THREE.HemisphereLight(window.game.static.colors.white, window.game.static.colors.white, 0.6);
-			//	hemiLight.position.set(0, 0, -1);
-			//	_three.scene.add(hemiLight);
-//
-			//	var spotLight = new THREE.SpotLight(window.game.static.colors.white);
-			//	spotLight.position.set(0, 0, 500);
-			//	//spotLight.castShadow = true;
-			//	_three.scene.add(spotLight);
 		},
 		render: function() {
 			// Update the scene
