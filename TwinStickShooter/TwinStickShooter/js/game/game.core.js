@@ -40,6 +40,8 @@ window.game.core = function () {
 			_playerHandler.updatePlayers(dt);
 			//_game.enemy.update();
 			_enemyHandler.updateEnemies(dt);
+
+			_three.updateCamera(_playerHandler);
 			// css elements update
 			_ui.update(_three);
 			//player ui update
@@ -100,7 +102,7 @@ window.game.core = function () {
 				//	if (!_events.keyboard.pressed["w"])
 				//		_playerHandler.addPlayer();
 				//}
-				//debug kkeys 
+				//debug kkeys
 				if (_events.keyboard.pressed["leftArrow"]) {
 					_three.camera.position.set(_three.camera.position.x+0.1,_three.camera.position.y,_three.camera.position.z);
 					_three.camera.lookAt(0,0,0);
