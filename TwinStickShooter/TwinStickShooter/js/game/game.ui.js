@@ -5,10 +5,11 @@
  */
 
 class  playerUI {
-	constructor(player){
+	constructor(player,ui){
 		this.player = player;
 		this.healthBar,
 		this.ammoBar
+		this.ui = ui;
 	
 	}
 	
@@ -67,6 +68,7 @@ class  playerUI {
 	makeHealthBar(three) { //create health bar
 		var health = 0;
 		var colour;
+		this.ui.elements.leftOverScores[this.player.index-1] = this.player.score;
 		if (this.player.health > 0) health = this.player.health;
 		else {
 			three.scene.remove(this.healthBar);
@@ -113,7 +115,8 @@ window.game.ui = function() {
 			infoboxIntro: null,
 			playerUIData: [],
 			menu: null,
-			words: null
+			words: null,
+			leftOverScores: [0,0,0,0]
 		},
 
 		// Methods
@@ -124,7 +127,7 @@ window.game.ui = function() {
 			_ui.three = three;
 		},
 		addPlayer: function(player) {
-			var temp = new playerUI(player);
+			var temp = new playerUI(player,_ui);
 			_ui.elements.playerUIData.push(temp);
 			player.ui = temp;
 			temp.create(_ui.three);
@@ -160,13 +163,21 @@ window.game.ui = function() {
 			_ui.elements.menu.className = "";
 			if (win) {
 				_ui.elements.words.innerHTML = "WIN";	
+				for (var i = 0; i < _ui.elements.playerUIData.length; i++) { //extract scores from live players
+		 			_ui.elements.words.innerHTML += "\t player "+_ui.elements.playerUIData[i].player.index+":"+_ui.elements.playerUIData[i].player.score;
+		 			if(_ui.elements.playerUIData.length + _ui.elements.leftOverScores.length > 1) _ui.elements.words.innerHTML += ","
+				}
 			} else {
 				_ui.elements.words.innerHTML = "LOSE";
 			}
-			for (var i = 0; i < _ui.elements.playerUIData.length; i++) {
-		 		_ui.elements.words.innerHTML += "\t player "+_ui.elements.playerUIData[i].player.index+":"+_ui.elements.playerUIData[i].player.score;
-		 		if(_ui.elements.playerUIData.length > 1) _ui.elements.words.innerHTML += ","
-			}
+			var start = true;
+			for (var i = 0; i < _ui.elements.leftOverScores.length; i++) { //extract and add scores from dead players
+				if (_ui.elements.leftOverScores[i] != 0) {
+					_ui.elements.words.innerHTML += "\t player "+(i+1)+":"+_ui.elements.leftOverScores[i];
+					if (!start) _ui.elements.words.innerHTML += ",";
+					else start = false;
+				}
+			} 
 		}
 	};
 
