@@ -133,7 +133,7 @@ window.game.three = function() {
 								// point camera to the centroid of the players
 								_three.camera.lookAt(midpoint_x, midpoint_y, midpoint_z);
 
-								console.log("here");
+								//console.log("here"); 
 
 						}
 				},

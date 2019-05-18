@@ -26,7 +26,7 @@ class Weapon {
 
 	//update all projectiles and shooting position with player movement
 	update() {
-		this.player.body.pointToWorldFrame(new CANNON.Vec3(0,0.65,-1.8), this.shootPosition);
+		this.player.body.pointToWorldFrame(new CANNON.Vec3(-0.1,0.75,-2), this.shootPosition);
 		//for (var i = this.projectiles.length - 1; i >= 0; i--) {
 		//	this.projectiles[i].update();
 		//}
@@ -141,7 +141,7 @@ class Projectile {
 					if (this.body.position.distanceTo(result.body.position) < result.body.shapes[0].boundingSphereRadius + this.body.shapes[0].boundingSphereRadius) {
 						var enemy = this.weapon.player.enemyHandler.getEnemyFromBody(result.body);
 						if (enemy != null) { //find enemy and make them take damage
-							enemy.takeDamage(this.damage);
+							enemy.takeDamage(this.damage, this.weapon.player);
 							this.weapon.removeProjectile(this);
 						}
 					}
@@ -175,6 +175,7 @@ class Player { //turn into class
 		// Configuration for player speed
 		this.speed = 2;
 		this.health = 10;
+		this.score = 0;
 
 		// animation variables
 		this.mixer = null;
@@ -279,6 +280,11 @@ class Player { //turn into class
 			self.uiHandler.addPlayer(self);
 			self.hasLoaded = true;
 		})
+	}
+
+	addScore(score) {
+		this.score+=score;
+		console.log("Player:"+this.index, this.score);
 	}
 
 	playWalkingAnimation() {

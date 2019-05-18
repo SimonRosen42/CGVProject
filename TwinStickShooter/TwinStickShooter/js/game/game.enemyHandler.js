@@ -48,6 +48,7 @@ class Enemy {
 		this.speedMax = 30, // Enemy mass which affects other rigid bodies in the world
 		this.lastAngle = null;
 		this.hurtDirection = null;
+		this.walkDistance = 0;
 		this.body = null;
 		// Enemy entity including mesh and rigid body
 		this.model = null;
@@ -178,8 +179,13 @@ class Enemy {
 		this.currentAction.stop();
 	}
 
-	takeDamage(damage) { //take damage from player weapon
+	takeDamage(damage, player) { //take damage from player weapon
 		this.health -= damage;
+		if (this.health > 0) {
+			player.addScore(10);
+		} else {
+			player.addScore(100);
+		}
 		this.state = enemyState.HURT;
 	}
 
@@ -189,8 +195,13 @@ class Enemy {
 
 	attack() {
 		if (this.state != enemyState.ATTACK) { //if not attacking attack, and choose random attack animation
+			var rand;
+			if (this.currentAnimation == this.animations[enemyAnimation.RUN]) {
+				rand = Math.random()*2+2;
+			} else{
+				rand = Math.random()*4;
+			}
 			this.state = enemyState.ATTACK;
-			var rand = Math.random()*4;
 				switch (true) {
 					case (rand < 1): this.switchCurrentAnimation(enemyAnimation.ATTACK1_R, true); break;
 					case (rand < 2): this.switchCurrentAnimation(enemyAnimation.ATTACK1_L, true); break;
@@ -218,6 +229,9 @@ class Enemy {
 		if (this.hasLoaded) {
 			if (this.health <= 0 && this.state != enemyState.DEAD) { //check if dead
 				this.die(playerHandler.cannon);
+			}
+			if (this.currentAnimation == this.animations[enemyAnimation.WALK]){ //make walk animation twice as fast
+				dt*=2;
 			}
 
 			if (this.mixer != null) //update animation mixer with time
@@ -252,6 +266,7 @@ class Enemy {
 				direction = new CANNON.Vec3(direction.x*this.speed,this.body.velocity.y,direction.z*this.speed);
 				if (this.state == enemyState.IDLE && magnitude < 30) { //close enough to walk to
 					this.state = enemyState.WALK;
+					this.walkDistance = magnitude;
 				}
 				if (this.state == enemyState.WALK && magnitude < 3) { //close enough to attack
 					this.attack();
@@ -268,11 +283,16 @@ class Enemy {
 				this.body.velocity.set(0,0,0);
 				this.switchCurrentAnimation(enemyAnimation.IDLE);
 			} else if (this.state == enemyState.WALK) { //walk towards player
-				if (magnitude > 5) this.state = enemyState.IDLE;
-				this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
+				if (this.walkDistance-magnitude > 5) {
+					this.body.velocity.set(direction.x*2,this.body.velocity.y,direction.z*2);
+					this.switchCurrentAnimation(enemyAnimation.RUN);
+				} else {
+					this.body.velocity.set(direction.x,this.body.velocity.y,direction.z);
+					this.switchCurrentAnimation(enemyAnimation.WALK);
+				}
 				this.lastAngle = window.game.helpers.cartesianToPolar(direction.x,-1*direction.z).angle - Math.PI/2;
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
-				this.switchCurrentAnimation(enemyAnimation.WALK);
+				
 			} else if (this.state == enemyState.HURT) { //hurt animation and stagger
 				if (this.hurtDirection != null) {
 					this.body.velocity = new CANNON.Vec3(-1*this.hurtDirection.x/2,this.body.velocity.y,-1*this.hurtDirection.z/2);
@@ -284,7 +304,7 @@ class Enemy {
 				this.body.velocity.set(0,0,0);
 				this.lastAngle = window.game.helpers.cartesianToPolar(direction.x,-1*direction.z).angle - Math.PI/2;
 				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.lastAngle);
-				if (this.currentAction.time > 1) {
+				if (this.currentAction.time > 0.5) {
 					this.state = enemyState.ATTACKED;
 				}
 			} else if (this.state == enemyState.DEAD) { //death 

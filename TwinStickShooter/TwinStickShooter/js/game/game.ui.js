@@ -163,6 +163,10 @@ window.game.ui = function() {
 			} else {
 				_ui.elements.words.innerHTML = "LOSE";
 			}
+			for (var i = 0; i < _ui.elements.playerUIData.length; i++) {
+		 		_ui.elements.words.innerHTML += "\t player "+_ui.elements.playerUIData[i].player.index+":"+_ui.elements.playerUIData[i].player.score;
+		 		if(_ui.elements.playerUIData.length > 1) _ui.elements.words.innerHTML += ","
+			}
 		}
 	};
 
