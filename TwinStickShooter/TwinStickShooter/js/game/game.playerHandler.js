@@ -1,9 +1,17 @@
 window.game = window.game || {};
 
+var weaponType = {
+	MACHINE_GUN: 0,
+	SHOTGUN = 1
+}
+
 class Weapon {
 	constructor(player, cannon) {
 		this.player = player;
 		this.cannon = cannon;
+
+		this.mesh = null;
+		this.hasLoaded = false;
 
 		//handles all projectiles produced by this gun
 		this.projectiles = [];
@@ -67,6 +75,25 @@ class Weapon {
 				}
 			}
 		}
+	}
+
+	loadWeapon(weaponTypeKey) {
+
+		//load in the enemy model in glb format
+		var loader = new THREE.GLTFLoader();
+
+		var filePath;
+		if (weaponTypeKey == weapon.MACHINE_GUN)
+			filePath = "/models/MachineGun.glb"
+		else if (weaponTypeKey == weapon.SHOTGUN)
+			filePath = "/models/shotgun.glb"
+		
+		var self = this;
+		loader.load(filePath, function (gltf) {
+			self.mesh = gltf.scene;
+			self.hasLoaded = true;
+			return self.mesh;
+	   	}
 	}
 }
 

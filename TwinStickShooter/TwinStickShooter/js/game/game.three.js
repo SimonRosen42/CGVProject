@@ -47,7 +47,6 @@ window.game.three = function() {
         reset: function(cannon) {
 			_three.setupScene();
 			_three.setupLights();
-			_three.setupSkybox();
 
 			// floor
             cannon.createBody({
@@ -95,6 +94,7 @@ window.game.three = function() {
 			var starsGeometry = new THREE.CubeGeometry( 75, 75, 75 );
 			var skyBox = new THREE.Mesh( starsGeometry, material);
 			skyBox.rotation.x += Math.PI / 2;
+
 			_three.scene.add( skyBox );
 		},
         setupCamera: function() {

@@ -12,6 +12,7 @@ window.game.core = function () {
 		init: function(options) {
 			// Setup necessary game components (_events, _three, _cannon, _ui)
 			_game.initComponents(options);
+			_three.setupSkybox();
 			// Create player and level
 			//_game.level.create();
 			//_game.enemy.create();
@@ -121,6 +122,9 @@ window.game.core = function () {
 				}
 				if (_events.keyboard.pressed["w"]) {
 					_game.reset();
+				} 
+				if (_events.keyboard.pressed["a"]) {
+					_playerHandler.addPlayer();
 				}
 			};
 
