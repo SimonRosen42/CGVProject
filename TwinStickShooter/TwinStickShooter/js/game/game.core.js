@@ -40,13 +40,14 @@ window.game.core = function () {
 			_playerHandler.updatePlayers(dt);
 			//_game.enemy.update();
 			_enemyHandler.updateEnemies(dt);
+			_three.updatePictureOfPictureCamera(_clock.getElapsedTime());
 			// css elements update
 			_ui.update(_three);
 			//player ui update
 			//_playerUI.update();
 			// Render visual scene
 			_three.render();
-			
+			_three.render2();
 		},
 		reset: function() {
 			_game.destroy();
@@ -119,6 +120,9 @@ window.game.core = function () {
 				}
 				if (_events.keyboard.pressed["w"]) {
 					_game.reset();
+				}
+				if(_events.keyboard.pressed["s"]){
+					_playerHandler.addPlayer();
 				}
 			};
 

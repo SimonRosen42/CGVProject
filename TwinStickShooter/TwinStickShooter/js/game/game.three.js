@@ -10,10 +10,15 @@ window.game.three = function() {
 	var _three = {
 		// container which will hold the final canvas element of THREE.js
 		container: null,
+		container2: null,
 		// Scene, camera and renderer
 		camera: null,
+		miniCamera: null,
 		scene: null,
 		renderer: null,
+		renderer2: null,
+		renderTarget: null,
+		
 		//default field of view setting for the camera
 		fov: 45,
 		//default near setting for camera
@@ -22,6 +27,7 @@ window.game.three = function() {
 		far: 1000,
 
 		texture: null,
+		geometry: null,
 
 		// Methods
         init: function(cannon, options) {
@@ -36,11 +42,16 @@ window.game.three = function() {
 				_three.far = options.far;
 			}
 
-        	_three.setupCamera();
-            _three.setupRenderer();
+			_three.setupScene();
+			_three.setupSkybox();
+			_three.setUpPictureOfPictureCamera();
+			_three.setupCamera();
+			_three.setupRenderer();
+			_three.setUpMiniCamRenderer();
+
             window.addEventListener( 'resize', _three.onWindowResize, false );
 
-            _three.reset(cannon);
+			_three.reset(cannon);
             // Add boxes
           //var halfExtents = new CANNON.Vec3(1,1,1);
           //var boxShape = new CANNON.Box(halfExtents);
@@ -74,9 +85,10 @@ window.game.three = function() {
                 //boxMesh.castShadow = true;
                 //boxMesh.receiveShadow = true;
             //}
-        },
+		},
+		
         reset: function(cannon) {
-			_three.setupScene();
+			// _three.setupSkybox();
 			_three.setupLights();
 			_three.setupSkybox();
 
@@ -99,7 +111,7 @@ window.game.three = function() {
             	collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.player | cannon.collisionGroup.solids
             });
 		},
-		setupSkybox() {
+		setupSkybox (){
 
 			var video = document.createElement('video');
 			video.src = "models/stars.mp4";
@@ -147,17 +159,55 @@ window.game.three = function() {
 			// skyBox.rotation.x += Math.PI / 2;
 			// _three.scene.add( skyBox );
 		},
+		 setUpPictureOfPictureCamera: function(){
+
+		// orthographic cameras
+			_three.miniCamera = new THREE.OrthographicCamera(
+			-100,		// Left
+			100,		// Right
+			100,		// Top
+			-100,		// Bottom
+			1,            			// Near 
+			100 );           			// Far 
+			_three.miniCamera.up = new THREE.Vector3(0,0,-1);
+			_three.miniCamera.lookAt( new THREE.Vector3(0,-1,0) );
+			_three.miniCamera.position.y = 500;
+			_three.miniCamera.scale.set(0.25,0.25,0.25);
+			_three.scene.add(_three.miniCamera);
+			
+			_three.renderTarget = new THREE.WebGLRenderTarget( 512/4, 512/4, { format: THREE.RGBFormat } );
+
+			var planelikeGeometry = new THREE.CubeGeometry( 100, 100, 100 );
+			var plane = new THREE.Mesh( planelikeGeometry, new THREE.MeshBasicMaterial( { map: _three.renderTarget.texture} ) );
+			plane.position.set(0,0,0);
+			//_three.scene.add(plane);
+		 },
+
+		 updatePictureOfPictureCamera: function(et){
+			_three.miniCamera.position.x = Math.cos((360*et)/10);
+			_three.miniCamera.position.z = Math.sin((360*et)/10);
+
+		 },
         setupCamera: function() {
         	//set up camera
             _three.camera = new THREE.PerspectiveCamera( _three.fov, window.innerWidth / window.innerHeight, _three.near, _three.far );
             _three.camera.up.set(0,1,0); //makes sure up vector is along y-axis
             _three.camera.position.set(0,40,50);
-            _three.camera.lookAt(0,0,0);
-        },
+			_three.camera.lookAt(0,0,0);
+			_three.geometry = new THREE.PlaneGeometry( 0, -100, 32 );
+
+
+		},
+		// setUpRenderTarget: function(){
+			
+		//  _three.renderTarget = new THREE.WebGLRenderTarget(_three.rtWidth, _three.rtHeight);
+
+		// },
+
         setupScene: function() {
         	//setup scene
             _three.scene = new THREE.Scene();
-            //_three.scene.fog = new THREE.Fog( 0x222222, 0, 500 ); //add fog
+           // _three.scene.fog = new THREE.Fog( 0x222222, 0, 500 ); //add fog
         },
         setupRenderer: function() {
         	_three.renderer = new THREE.WebGLRenderer({antialias: true}); //setup renderer with antialiasing
@@ -166,8 +216,22 @@ window.game.three = function() {
             _three.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             _three.renderer.setSize( window.innerWidth, window.innerHeight );
             _three.renderer.setClearColor( 0x222222, 1 );
-            document.body.appendChild( _three.renderer.domElement );
-        },
+		//	_three.render2.autoClear = false
+			document.body.appendChild( _three.renderer.domElement );
+		},
+		
+		setUpMiniCamRenderer: function() {
+			// anti antialiasing renderer
+			_three.renderer2 = new THREE.WebGLRenderer({antialias: true}); 
+			_three.renderer2.setSize( window.innerWidth/4, window.innerHeight/4 );
+			_three.renderer2.setClearColor( 0x222222, 1 );
+			_three.renderer2.setViewport (0,0,100,100);
+			_three.render2.autoClear = false;
+
+			document.body.appendChild( _three.renderer2.domElement );
+
+		},
+
 		setupLights: function() {
 			//add ambient light
             var ambient = new THREE.AmbientLight( 0x111111 );
@@ -202,11 +266,21 @@ window.game.three = function() {
 			// Update the scene
 			_three.renderer.render(_three.scene, _three.camera);
 		},
+		render2: function(){
+			_three.renderer2.render(_three.scene,_three.miniCamera);
+		},
  		onWindowResize: function() {
 			// Keep screen size when window resizes
 			_three.camera.aspect = window.innerWidth / window.innerHeight;
 			_three.camera.updateProjectionMatrix();
 			_three.renderer.setSize(window.innerWidth, window.innerHeight);
+
+			//Keep mini map screen on resizes
+			_three.miniCamera.aspect = (window.innerWidth /4)/ (window.innerHeight/4);
+			_three.renderer2.setSize(window.innerWidth/4,window.innerHeight/4);
+			//_three.miniCamera.projectionMatrix.scale(-1,-1);
+			_three.miniCamera.updateProjectionMatrix();
+
 		}
 	};
 

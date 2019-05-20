@@ -21,7 +21,9 @@
 
 	<body>
 
-		<div id="game"></div>
+		<div id="game">
+		</div>
+		<div id = "miniCam" ></div>
 
 		<!--<div id="glowI" class="glow">	
 			<h1 style="text-orientation: absolute" >
@@ -59,6 +61,7 @@
 				window.gameInstance = window.game.core();
 				window.gameInstance.init({
 					container: document.querySelector("#game"),
+					container2: document.querySelector("#miniCam")
 					//clearColour: window.game.static.black,
 					//fov: 45,
 					//near: 1,

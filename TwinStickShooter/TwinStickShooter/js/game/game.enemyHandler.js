@@ -153,7 +153,11 @@ class Enemy {
 
 	switchCurrentAnimation(animationEnumKey, once) {
 		if (this.currentAnimation != this.animations[animationEnumKey]) {
-			if (this.currentAnimation != null) this.stopCurrentAnimation();
+	//	if(this.prevAnimation != this.animations[animationEnumKey]){
+			//if(this.currentAnimation === null) this.currentAnimation = this.prevAnimation;
+			//if(this.currentAnimation!= null) this.currentAnimation = this.animations[prevAnimationEnumKey];
+			//if (this.currentAnimation != null) this.stopCurrentAnimation();
+			this.prevAnimation = this.currentAnimation;
 			this.currentAnimation = this.animations[animationEnumKey];
 			if (once)
 				this.playCurrentAnimationOnce();
@@ -162,14 +166,33 @@ class Enemy {
 	}
 
 	playCurrentAnimation() {
+		//var testAction = this.mixer.clipAction(this.previousAction);
+		//testAction.loop = THREE.LoopRepeat;
+		this.prevAction = this.mixer.clipAction(this.prevAnimation)
+		this.prevAction.loop = THREE.LoopRepeat;
+		//var runner = this.mixer.clipAction(this.currentAction);
+		//runner.loop = THREE.LoopRepeat;
 		this.currentAction = this.mixer.clipAction(this.currentAnimation);
 		this.currentAction.loop = THREE.LoopRepeat;
+		//console.log(Object.getOwnPropertyNames(this.currentAnimation));
+		
+		//this.prevAction.crossFadeTo(this.currentAction,0.5,false);
+		this.currentAction.crossFadeFrom(this.prevAction,0.5,false);
+		//this.prevAction.play()
+		//testAction.crossFadeTo(runner,0.5,false);
+
+		//runner.crossFadeTo(testAction,0.5,false);
+
+		//testAction.crossFadeFrom(runner,0.5,false);
 		this.currentAction.play();
+		//runner.play();
+		
 	}
 
 	playCurrentAnimationOnce() {
 		this.currentAction = this.mixer.clipAction(this.currentAnimation);
 		this.currentAction.loop = THREE.LoopOnce;
+		//this.currentAction.crossFadeFrom(this.currentAnimation,0.5,false);
 		this.currentAction.play().reset();
 	}
 
