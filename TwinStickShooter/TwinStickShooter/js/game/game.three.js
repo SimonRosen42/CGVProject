@@ -47,7 +47,7 @@ window.game.three = function() {
         reset: function(cannon) {
 			_three.setupScene();
 			_three.setupLights();
-
+			_three.setupSkybox();
 			// floor
             cannon.createBody({
             	mass: 0,
@@ -104,39 +104,39 @@ window.game.three = function() {
             _three.camera.position.set(0,40,50);
             _three.camera.lookAt(0,0,0);
         },
-				updateCamera: function(playerHandler) {
+		updateCamera: function(playerHandler) {
 
-						var numPlayers = playerHandler.players;
+			var numPlayers = playerHandler.players;
 
-						if (playerHandler.players == 0) {
-							_three.camera.up.set(0,1,0); //makes sure up vector is along y-axis
-							_three.camera.position.set(0,30,40);
-							_three.camera.lookAt(0,0,0);
-						} else {
+			if (playerHandler.players == 0) {
+				_three.camera.up.set(0,1,0); //makes sure up vector is along y-axis
+				_three.camera.position.set(0,30,40);
+				_three.camera.lookAt(0,0,0);
+			} else {
 
-								// get centroid (midpoint) of the players
-								var x_sum = 0;
-								var y_sum = 0;
-								var z_sum = 0;
-								for (player in playerHandler.player) {
-									if (player.hasLoaded) {
-										x_sum += player.body.position.x;
-										y_sum += player.body.position.y;
-										z_sum += player.body.position.z;
-									}
-								}
-
-								midpoint_x = x_sum/numPlayers;
-								midpoint_y = y_sum/numPlayers;
-								midpoint_z = z_sum/numPlayers;
-
-								// point camera to the centroid of the players
-								_three.camera.lookAt(midpoint_x, midpoint_y, midpoint_z);
-
-								//console.log("here"); 
-
+					// get centroid (midpoint) of the players
+					var x_sum = 0;
+					var y_sum = 0;
+					var z_sum = 0;
+					for (player in playerHandler.player) {
+						if (player.hasLoaded) {
+							x_sum += player.body.position.x;
+							y_sum += player.body.position.y;
+							z_sum += player.body.position.z;
 						}
-				},
+					}
+
+					midpoint_x = x_sum/numPlayers;
+					midpoint_y = y_sum/numPlayers;
+					midpoint_z = z_sum/numPlayers;
+
+					// point camera to the centroid of the players
+					_three.camera.lookAt(midpoint_x, midpoint_y, midpoint_z);
+
+					//console.log("here"); 
+
+			}
+		},
         setupScene: function() {
         	//setup scene
             _three.scene = new THREE.Scene();

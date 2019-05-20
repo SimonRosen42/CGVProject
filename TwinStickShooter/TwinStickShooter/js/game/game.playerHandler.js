@@ -2,17 +2,65 @@ window.game = window.game || {};
 
 var weaponType = {
 	MACHINE_GUN: 0,
-	SHOTGUN = 1
+	SHOTGUN: 1,
+	NORMAL: 2
+}
+
+class pickup {
+	constructor(pos, cannon, key, playerHandler) {
+		this.mesh = null;
+		this.body = null;
+		this.cannon = cannon;
+		this.ph = playerHandler;
+		this.key = key;
+		this.done = false;
+		var self = this;
+		var filePath;
+		if (key == weaponType.MACHINE_GUN) {
+			filePath = "models/MachineGun.glb"
+		}
+		else if (key == weaponType.SHOTGUN) {
+			filePath = "models/shotgun.glb"
+		}
+		var loader = new THREE.GLTFLoader();
+		loader.load(filePath, function (gltf) {
+			self.mesh = gltf.scene;
+			self.body = self.cannon.createBody({ // create rigidbody and mesh
+				mass: 0,
+				position: {
+					x: pos.x,
+					y: pos.y,
+					z: pos.z
+				},
+				mesh: self.mesh,
+				meshMaterial: new THREE.MeshBasicMaterial({color: 0x010101}),
+				shape: new CANNON.Box(new CANNON.Vec3(1,1,1)),
+				material: self.cannon.solidMaterial,
+				collisionGroup: self.cannon.collisionGroup.solids,
+				collisionFilter: self.cannon.collisionGroup.player // | cannon.collisionGroup.enemy
+			});
+			self.body.addEventListener("collide", function(e){ //remove projectile if it collides with something solid
+				var p = self.ph.getPlayerFromBody(e.body);
+				if (p != null && !this.done) {
+					setTimeout(function() {
+						this.done = true;
+						p.weapon.loadWeapon(self.key);
+						self.cannon.removeVisual(self.body);
+					}, 0);
+				}
+			});
+		});
+	}
 }
 
 class Weapon {
 	constructor(player, cannon) {
 		this.player = player;
 		this.cannon = cannon;
-
+		this.body = null;
 		this.mesh = null;
 		this.hasLoaded = false;
-
+		this.weaponType = weaponType.NORMAL;
 		//handles all projectiles produced by this gun
 		this.projectiles = [];
 		this.numProjectiles = 0;
@@ -28,7 +76,24 @@ class Weapon {
 
 		this.magazineMax = 8;
 		this.magazine = this.magazineMax;
+		this.magazines = 0;
 
+		
+		// create an AudioListener and add it to the camera
+		var listener = new THREE.AudioListener();
+		this.cannon.three.camera.add( listener );
+
+		// create a global audio source
+		this.sound = new THREE.Audio( listener );
+		var audioLoader = new THREE.AudioLoader();
+		var self = this;
+		audioLoader.load( 'sounds/FireGun.mp3', function( buffer ) {
+			self.sound.setBuffer( buffer );
+			self.sound.setLoop( false );
+			self.sound.setVolume( 1 );
+			self.playbackRate = 1;
+		});
+		this.loadWeapon(weaponType.NORMAL);
 		this.update();
 	}
 
@@ -38,6 +103,16 @@ class Weapon {
 		//for (var i = this.projectiles.length - 1; i >= 0; i--) {
 		//	this.projectiles[i].update();
 		//}
+		if (this.hasLoaded && this.weaponType != weaponType.NORMAL) {
+			//var offset = Math.cos(Math.PI/180*(this.player.mixer.time*this.player.mixer.timeScale*360))*0.01;
+			//console.log(offset);
+			this.player.body.pointToWorldFrame(new CANNON.Vec3(-0.1,0.75,-2), this.shootPosition);
+			this.body.position = this.shootPosition;
+			if (this.weaponType == weaponType.MACHINE_GUN)
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.player.lastRotation.angle - Math.PI/2);
+			else
+				this.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), this.player.lastRotation.angle);
+		}
 		var p;
 		for (p in this.projectiles) {
 			this.projectiles[p].update();
@@ -64,13 +139,27 @@ class Weapon {
 	fire(cannon) {
 		if (!this.reloading) {
 			if (this.fireRateClock.getElapsedTime() > this.fireRate) { //fire rate
-				this.projectiles.push(new Projectile(this, cannon, this.numProjectiles));
-				this.numProjectiles++;
+				if (this.weaponType == weaponType.SHOTGUN) {
+					for (var i = 0; i < 8; i++) {
+						var offset = new CANNON.Vec3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5);
+						this.projectiles.push(new Projectile(this, cannon, this.numProjectiles, offset));
+						this.numProjectiles++;
+					}
+				} else {
+					this.projectiles.push(new Projectile(this, cannon, this.numProjectiles));
+					this.numProjectiles++;
+				}
+				if (this.sound.isPlaying) this.sound.stop();
+				this.sound.play();
+				console.log(this.sound);
 				if (this.numProjectiles > 200) this.numProjectiles = 0;
 				this.fireRateClock.start();
 				this.magazine--;
 				if (this.magazine <= 0) { //reload if magazine empty
 					this.reloading = true;
+					this.magazines++;
+					if (this.magazines >= 10)
+						this.loadWeapon(weaponType.NORMAL);
 					this.reloadRateClock.start();
 				}
 			}
@@ -78,27 +167,94 @@ class Weapon {
 	}
 
 	loadWeapon(weaponTypeKey) {
-
-		//load in the enemy model in glb format
+		this.magazines = 0;
+		if (this.weaponType == weaponTypeKey)
+			return;
+		//load in the gun model in glb format
 		var loader = new THREE.GLTFLoader();
-
+		//load in audio
+		var audioLoader = new THREE.AudioLoader();
+		if (this.body != null) {
+			this.cannon.removeVisual(this.body);
+		}
+		this.weaponType = weaponTypeKey;
 		var filePath;
-		if (weaponTypeKey == weapon.MACHINE_GUN)
-			filePath = "/models/MachineGun.glb"
-		else if (weaponTypeKey == weapon.SHOTGUN)
-			filePath = "/models/shotgun.glb"
-		
 		var self = this;
+		if (weaponTypeKey == weaponType.MACHINE_GUN) {
+			filePath = "models/MachineGun.glb"
+			this.fireRate = 0.2;
+			this.reloadRate = 2;
+			this.magazineMax = 20;
+			this.magazine = this.magazineMax;
+			audioLoader.load( 'sounds/FireMachineGun.mp3', function( buffer ) {
+				self.sound.setBuffer( buffer );
+				self.sound.setLoop( false );
+				self.sound.setVolume( 1 );
+				self.playbackRate = 2;
+			});
+		}
+		else if (weaponTypeKey == weaponType.SHOTGUN) {
+			filePath = "models/shotgun.glb"
+			this.fireRate = 0.8;
+			this.reloadRate = 2;
+			this.magazineMax = 2;
+			this.magazine = this.magazineMax;
+			audioLoader.load( 'sounds/FireShotgun.mp3', function( buffer ) {
+				self.sound.setBuffer( buffer );
+				self.sound.setLoop( false );
+				self.sound.setVolume( 1 );
+				self.playbackRate = 1;
+			});
+		}
+		else if (weaponTypeKey == weaponType.NORMAL) {
+			this.fireRate = 0.5;
+			this.reloadRate = 1.5;
+			this.magazineMax = 6;
+			this.magazine = this.magazineMax;
+			this.hasLoaded = true;
+			audioLoader.load( 'sounds/FireGun.mp3', function( buffer ) {
+				self.sound.setBuffer( buffer );
+				self.sound.setLoop( false );
+				self.sound.setVolume( 1 );
+				self.playbackRate = 1;
+			});
+			return;
+		}
+		
 		loader.load(filePath, function (gltf) {
+			var offset = new CANNON.Vec3(0,0,0);
+			if (weaponTypeKey == weaponType.MACHINE_GUN) {
+				gltf.scene.scale.set(0.7,0.7,0.7);
+			} else if (weaponTypeKey == weaponType.SHOTGUN) {
+				gltf.scene.scale.set(0.7,0.7,0.7);
+			}
 			self.mesh = gltf.scene;
+			//var group = new THREE.Group();
+			//group.add(self.player.mesh);
+			//self.mesh.position.set(self.shootPosition.x,self.shootPosition.y,self.shootPosition.z);
+			//group.add(self.mesh);
+			//self.cannon.replaceMesh(self.player.body, group);
+			self.body = self.cannon.createBody({ // create rigidbody and mesh
+				mass: 0,
+				position: {
+					x: self.shootPosition.x,
+					y: self.shootPosition.y,
+					z: self.shootPosition.z
+				},
+				mesh: self.mesh,
+				meshMaterial: new THREE.MeshBasicMaterial({color: 0x010101}),
+				shape: new CANNON.Box(new CANNON.Vec3(0.1,0.1,0.1)),
+				material: self.cannon.solidMaterial,
+				collisionGroup: self.cannon.collisionGroup.player,
+				collisionFilter: self.cannon.collisionGroup.solids // | cannon.collisionGroup.enemy
+			});
 			self.hasLoaded = true;
-			return self.mesh;
-	   	}
+	   	});
 	}
 }
 
 class Projectile {
-	constructor(weapon, cannon, i) {
+	constructor(weapon, cannon, i, offset=null) {
 		this.weapon = weapon;
 		this.speed = 6;
 		this.damage = 2;
@@ -118,13 +274,21 @@ class Projectile {
 			shape: new CANNON.Sphere(0.1),
 			material: cannon.solidMaterial,
 			collisionGroup: cannon.collisionGroup.projectile,
-			collisionFilter: cannon.collisionGroup.solids // | cannon.collisionGroup.enemy
+			collisionFilter: cannon.collisionGroup.solids //| cannon.collisionGroup.enemy
 		});
-		this.body.velocity.set( //set initial velocity with respect to shooting position
-			(this.body.position.x - weapon.player.body.position.x)*this.speed,
-			0,
-			(this.body.position.z - weapon.player.body.position.z)*this.speed
-		);
+		if (offset != null) {
+			this.body.velocity.set( //set initial velocity with respect to shooting position
+				(this.body.position.x - weapon.player.body.position.x)*this.speed + offset.x*this.speed,
+				offset.y*this.speed,
+				(this.body.position.z - weapon.player.body.position.z)*this.speed + offset.z*this.speed
+			);
+		} else {
+			this.body.velocity.set( //set initial velocity with respect to shooting position
+				(this.body.position.x - weapon.player.body.position.x)*this.speed,
+				0,
+				(this.body.position.z - weapon.player.body.position.z)*this.speed
+			);
+		}
 		this.shootPosition = weapon.shootPosition;
 		//console.log(cannon.world.raycastClosest(from, to, raycastOptions, result));
 		//console.log(result.body.position);
@@ -143,11 +307,11 @@ class Projectile {
 			this.shootPosition.y,
 			this.body.position.z
 		);
-		this.body.velocity.set( //keep velocity constant and 0 y axis velocity
-			this.body.velocity.x,
-			0,
-			this.body.velocity.z
-		);
+		//this.body.velocity.set( //keep velocity constant and 0 y axis velocity
+		//	this.body.velocity.x,
+		//	this.body.velocity.y,
+		//	this.body.velocity.z
+		//);
 		var totalVel = Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2));
 		var velInFrame = totalVel*this.clock.getDelta() * 5; //optimizing raycasts to only be called initially and nearby the enemy
 		if (this.lastDistance > velInFrame * 5 || this.lastDistance <= 0) {
@@ -331,7 +495,13 @@ class Player { //turn into class
 	//destroy player and remove player from controller bind
 	destroy(cannon) {
 		cannon.removeVisual(this.body);
+		if (this.weapon.body != null) cannon.removeVisual(this.weapon.body);
 		this.controller.player = null;
+	}
+
+	removeVisual(cannon){
+		cannon.removeVisual(this.body);
+		if (this.weapon.body != null) cannon.removeVisual(this.weapon.body);
 	}
 
 	update(cannon,three,game,dt) {
@@ -364,10 +534,10 @@ class Player { //turn into class
 		//if (Math.sqrt(Math.pow(this.body.velocity.x,2) + Math.pow(this.body.velocity.z,2)) > this.speed) {
 		this.body.velocity.set(horizontal * this.speed, this.body.velocity.y, vertical * this.speed);
 		if (Math.abs(horizontal) > 0 || Math.abs(vertical) > 0) {
-			if (vertical < 0) this.currentAction.timeScale = (Math.abs(horizontal) + Math.abs(vertical)) * -1;
-			else this.currentAction.timeScale = Math.abs(horizontal) + Math.abs(vertical);
+			if (vertical < 0) this.mixer.timeScale = (Math.abs(horizontal) + Math.abs(vertical)) * -1;
+			else this.mixer.timeScale = Math.abs(horizontal) + Math.abs(vertical);
 		} else {
-			this.currentAction.timeScale = 0;
+			this.mixer.timeScale = 0;
 		}
 		//} else this.body.applyForce(new CANNON.Vec3(horizontal * this.acceleration * 100, 0, vertical * this.acceleration * 100), this.body.position);
 	}
@@ -406,7 +576,7 @@ class Player { //turn into class
 	takeDamage() {
 		this.health--;
 		if (this.health <= 0) {
-			this.enemyHandler.cannon.removeVisual(this.body);
+			this.removeVisual(this.weapon.cannon);
 			this.hasLoaded = false;
 		}
 	}
@@ -424,13 +594,21 @@ window.game.playerHandler = function () {
 		enemyHandler: null,
 
 		player: [],
-
 		//add a player by linking them to a controller
 		addPlayer: function(controller) {
 			var temp = new Player(controller, this.enemyHandler, this.players+1, this.ui);
 			temp.create(_playerHandler.cannon, _playerHandler.three);
 			_playerHandler.players++;
 		  	_playerHandler.player.push(temp);
+		},
+
+		getPlayerFromBody: function(body) {
+			for (var i = 0; i < _playerHandler.player.length; i++) {
+				if (_playerHandler.player[i].body == body) {
+					return _playerHandler.player[i];
+				}
+			}
+			return null;
 		},
 
 		//updates the individual players

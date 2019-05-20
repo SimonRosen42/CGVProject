@@ -343,6 +343,7 @@ window.game.enemyHandler = function() {
 		maxEnemies: 100,
 		maxCurrentEnemies: 5,
 		spawnClock: new THREE.Clock(),
+		pickups: [],
 
 		addEnemy: function(position) { //add enemy and load model
 			var enemy = new Enemy(_enemyHandler.numEnemies);
@@ -350,6 +351,10 @@ window.game.enemyHandler = function() {
 			enemy.create(_enemyHandler.cannon, _enemyHandler.three, position, filePath);
 			_enemyHandler.enemies.push(enemy);
 			_enemyHandler.numEnemies++;
+			if (this.numEnemies % 10 == 0) {
+				this.pickups.push(new pickup(new THREE.Vector3(5,1,5), this.cannon, weaponType.SHOTGUN, this.playerHandler));
+		  		this.pickups.push(new pickup(new THREE.Vector3(-5,1,-5), this.cannon, weaponType.MACHINE_GUN, this.playerHandler));
+		  	}
 		},
 
 		removeEnemy: function(enemy) { //remove enemy and destroy mesh
@@ -378,6 +383,11 @@ window.game.enemyHandler = function() {
     					if (grates[temp] != null) {
     						this.spawnClock.start();
 							this.addEnemy(new THREE.Vector3(grates[temp].pos.x,grates[temp].pos.y,grates[temp].pos.z));
+						}
+						for (var i = 0; i < this.pickups.length; i++) {
+							if (this.pickups[i].done) {
+								this.pickups.splice(i,1);
+							}
 						}
 					}
 				}

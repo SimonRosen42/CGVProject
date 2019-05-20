@@ -113,6 +113,16 @@ window.game.cannon = function() {
 			body.quaternion.setFromAxisAngle(axis, radians);
 		},
 
+		replaceMesh: function(body, mesh) {
+			var bodyCount = _cannon.bodies.length;
+			for (var j = 0; j < bodyCount; j++){
+				if (body == _cannon.bodies[j]) {
+					_cannon.visuals[j] = mesh;
+				}
+			}
+			_cannon.three.scene.add(mesh);
+		},
+
 		createBody: function(options) {
 			// Creates a new rigid body based on specific options
 			var body  = new CANNON.Body({mass: options.mass, shape: options.shape, material: options.material });
