@@ -151,7 +151,6 @@ class Weapon {
 				}
 				if (this.sound.isPlaying) this.sound.stop();
 				this.sound.play();
-				console.log(this.sound);
 				if (this.numProjectiles > 200) this.numProjectiles = 0;
 				this.fireRateClock.start();
 				this.magazine--;
