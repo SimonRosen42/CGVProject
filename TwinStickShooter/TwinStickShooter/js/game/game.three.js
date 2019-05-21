@@ -50,6 +50,8 @@ window.game.three = function() {
 			_three.setupLights();
 			_three.setupSkybox();
 			// floor
+			// var floorTexture = new THREE.TextureLoader().load( 'texture/green_hex.png' ); //load texture
+			
             cannon.createBody({
             	mass: 0,
             	shape: new CANNON.Plane(),
@@ -60,7 +62,7 @@ window.game.three = function() {
             	},
             	rotation: [new CANNON.Vec3(1,0,0), -Math.PI/2],
             	geometry: new THREE.PlaneGeometry( 40, 40, 50, 50 ),
-            	meshMaterial: new THREE.MeshLambertMaterial({ color: 0xdddddd, opacity: 0.8, transparent:true }),
+            	meshMaterial: new THREE.MeshLambertMaterial({ color: 0xdddddd, opacity: 0.7, transparent:true }), //, map: floorTexture
             	receiveShadow: true,
             	castShadow: false,
             	material: cannon.groundMaterial,
