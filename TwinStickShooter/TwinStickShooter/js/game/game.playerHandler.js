@@ -6,8 +6,8 @@ var weaponType = {
 	NORMAL: 2
 }
 
-var other_pickup = {
-	HEALTH_DRINK: 0
+var pickupType = {
+	HEALTH_DRINK: 3
 }
 
 class pickup {
@@ -18,6 +18,8 @@ class pickup {
 		this.ph = playerHandler;
 		this.key = key;
 		this.done = false;
+		this.timer = new THREE.Clock();
+		this.timer.start();
 		var self = this;
 		var filePath;
 		if (key == weaponType.MACHINE_GUN) {
@@ -25,14 +27,16 @@ class pickup {
 		}
 		else if (key == weaponType.SHOTGUN) {
 			filePath = "models/shotgun.glb"
-		} else if (key == other_pickup.HEALTH_DRINK) {
+		} else if (key == pickupType.HEALTH_DRINK) {
 			filePath = "models/drink.glb"
 		}
 		var loader = new THREE.GLTFLoader();
 		loader.load(filePath, function (gltf) {
+			if (key == pickupType.HEALTH_DRINK) 
+				gltf.scene.scale.set(20,20,20);
 			self.mesh = gltf.scene;
 			self.body = self.cannon.createBody({ // create rigidbody and mesh
-				mass: 0,
+				mass: 100,
 				position: {
 					x: pos.x,
 					y: pos.y,
@@ -41,16 +45,20 @@ class pickup {
 				mesh: self.mesh,
 				meshMaterial: new THREE.MeshBasicMaterial({color: 0x010101}),
 				shape: new CANNON.Box(new CANNON.Vec3(1,1,1)),
-				material: self.cannon.solidMaterial,
+				material: self.cannon.groundMaterial,
 				collisionGroup: self.cannon.collisionGroup.solids,
-				collisionFilter: self.cannon.collisionGroup.player // | cannon.collisionGroup.enemy
+				collisionFilter: self.cannon.collisionGroup.player | self.cannon.collisionGroup.solids // | cannon.collisionGroup.enemy
 			});
-			self.body.addEventListener("collide", function(e){ //remove projectile if it collides with something solid
+			self.body.addEventListener("collide", function(e){ //remove pickup if it collides with player
 				var p = self.ph.getPlayerFromBody(e.body);
 				if (p != null && !this.done) {
 					setTimeout(function() {
+						//console.log(self.key);
 						this.done = true;
-						p.weapon.loadWeapon(self.key);
+						if (self.key != pickupType.HEALTH_DRINK)
+							p.weapon.loadWeapon(self.key);
+						else 
+							p.healthPickup();
 						self.cannon.removeVisual(self.body);
 					}, 0);
 				}
@@ -72,15 +80,15 @@ class Weapon {
 		this.numProjectiles = 0;
 		this.shootPosition = new CANNON.Vec3(0,0,0);
 
-		this.fireRate = 0.2;
+		this.fireRate = 0.5;
 		this.fireRateClock = new THREE.Clock();
 		this.fireRateClock.start();
 
-		this.reloadRate = 1;
+		this.reloadRate = 1.5;
 		this.reloadRateClock = new THREE.Clock();
 		this.reloading = false;
 
-		this.magazineMax = 8;
+		this.magazineMax = 6;
 		this.magazine = this.magazineMax;
 		this.magazines = 0;
 
@@ -99,7 +107,7 @@ class Weapon {
 			self.sound.setVolume( 1 );
 			self.playbackRate = 1;
 		});
-		this.loadWeapon(weaponType.NORMAL);
+		this.loadWeapon(this.weaponType);
 		this.update();
 	}
 
@@ -344,7 +352,7 @@ class Projectile {
 				}
 			}
 		}
-		if (this.clock.getElapsedTime() > 3) { //default death timer
+		if (this.clock.getElapsedTime() > 2) { //default death timer
 			this.weapon.removeProjectile(this);
 		}
 
@@ -480,7 +488,7 @@ class Player { //turn into class
 
 	addScore(score) {
 		this.score+=score;
-		console.log("Player:"+this.index, this.score);
+		//console.log("Player:"+this.index, this.score);
 	}
 
 	playWalkingAnimation() {
@@ -577,6 +585,13 @@ class Player { //turn into class
 		}
 	}
 
+	healthPickup() {
+		function clamp(num, min, max) {
+ 			return num <= min ? min : num >= max ? max : num;
+		}
+		this.health = clamp(this.health+5, 0, 10);
+	}
+
 	//make this player take damage from a zombie
 	takeDamage() {
 		this.health--;
@@ -599,6 +614,8 @@ window.game.playerHandler = function () {
 		enemyHandler: null,
 
 		player: [],
+		pickups: [],
+		pickupTimer: new THREE.Clock(),
 		//add a player by linking them to a controller
 		addPlayer: function(controller) {
 			var temp = new Player(controller, this.enemyHandler, this.players+1, this.ui);
@@ -619,13 +636,34 @@ window.game.playerHandler = function () {
 		//updates the individual players
 		updatePlayers: function(dt) {
 			var dead = 0;
+			var low = 0;
 			if (_playerHandler.player[0] != null) {
 				for (var i = _playerHandler.player.length - 1; i >= 0; i--) {
 					_playerHandler.player[i].update(_playerHandler.cannon,_playerHandler.three,_playerHandler.game,dt);
+					if (_playerHandler.player[i].health <= 5) low++;
+					if (_playerHandler.player[i].health <= 3) low++;
 					if (_playerHandler.player[i].health <= 0) dead++;
-					if (dead == this.player.length) {
+				}
+				for (var i = 0; i < this.pickups.length; i++) {
+					if (this.pickups[i].timer.getElapsedTime() > 10) {
+						this.cannon.removeVisual(this.pickups[i].body);
+						this.pickups[i].done = true;
+					}
+				 	if (this.pickups[i].done) {
+				 		this.pickups.splice(i,1);
+				 		this.pickupTimer.start();
+				 	}
+				} 
+				if (dead == this.player.length) {
 						this.ui.showEndMenu(false);
 						//this.game.reset();
+					}
+				if (low >= 1) {
+					if (Math.random() > 1/(low-dead*2)) {
+						if (this.pickups.length < low-1-dead*2 && this.pickupTimer.getElapsedTime() > 5) {
+							this.pickupTimer.stop();
+							this.pickups.push(new pickup(new THREE.Vector3(Math.random()*20-10,1,Math.random()*20-10), this.cannon, pickupType.HEALTH_DRINK, this));
+						}
 					}
 				}
 			}

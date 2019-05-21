@@ -387,6 +387,10 @@ window.game.enemyHandler = function() {
 							this.addEnemy(new THREE.Vector3(grates[temp].pos.x,grates[temp].pos.y,grates[temp].pos.z));
 						}
 						for (var i = 0; i < this.pickups.length; i++) {
+							if (this.pickups[i].timer.getElapsedTime() > 15) {
+								this.cannon.removeVisual(this.pickups[i].body);
+								this.pickups[i].done = true;
+							}
 							if (this.pickups[i].done) {
 								this.pickups.splice(i,1);
 							}
