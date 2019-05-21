@@ -352,8 +352,10 @@ window.game.enemyHandler = function() {
 			_enemyHandler.enemies.push(enemy);
 			_enemyHandler.numEnemies++;
 			if (this.numEnemies % 10 == 0) {
-				this.pickups.push(new pickup(new THREE.Vector3(5,1,5), this.cannon, weaponType.SHOTGUN, this.playerHandler));
-		  		this.pickups.push(new pickup(new THREE.Vector3(-5,1,-5), this.cannon, weaponType.MACHINE_GUN, this.playerHandler));
+				if (Math.random() < 0.5) 
+					this.pickups.push(new pickup(new THREE.Vector3(Math.random()*20-10,1,Math.random()*20-10), this.cannon, weaponType.SHOTGUN, this.playerHandler));
+				else
+		  			this.pickups.push(new pickup(new THREE.Vector3(Math.random()*20-10,1,Math.random()*20-10), this.cannon, weaponType.MACHINE_GUN, this.playerHandler));
 		  	}
 		},
 
