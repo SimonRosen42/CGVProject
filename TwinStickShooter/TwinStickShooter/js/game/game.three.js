@@ -20,6 +20,7 @@ window.game.three = function() {
 		near: 1,
 		//default far setting for camera
 		far: 1000,
+		cubeCamera: null,
 
 		texture: null,
 
@@ -137,6 +138,9 @@ window.game.three = function() {
 
 			}
 		},
+		updateCubeMap: function(){
+			this.cubeCamera.update(_three.renderer, _three.scene);
+		},
         setupScene: function() {
         	//setup scene
             _three.scene = new THREE.Scene();
@@ -174,9 +178,15 @@ window.game.three = function() {
             //light.shadowCameraVisible = true;
             _three.scene.add( light );
 		},
+		setUpCubeCamera: function(){
+			this.cubeCamera = new THREE.CubeCamera(10, 100, 512);
+			_three.scene.add(this.cubeCamera);
+		},
 		render: function() {
 			// Update the scene
 			_three.renderer.render(_three.scene, _three.camera);
+			//update CubeMap
+			this.updateCubeMap();
 		},
  		onWindowResize: function() {
 			// Keep screen size when window resizes

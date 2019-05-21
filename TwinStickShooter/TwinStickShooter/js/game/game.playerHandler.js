@@ -422,29 +422,28 @@ class Player { //turn into class
 	create(cannon, three) {
 		//collider is cube
 		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
-
-		//load in the player model in glb format
+//load in the player model in glb format
 		var loader = new THREE.GLTFLoader();
 		var filePath =  "models/player" + this.index.toString() + ".glb";
 		console.log(filePath);
 		var self = this;
 		loader.load(filePath, function (gltf) {
 
-	   	gltf.scene.scale.set(0.75,0.75,0.75);
+			gltf.scene.scale.set(0.75,0.75,0.75);
 
 			self.model = gltf.scene;
 
 			gltf.scene.traverse( function( node ) {
-				
+
 				//add shadows to the model
-         		if ( node instanceof THREE.SkinnedMesh ) {
-         			node.castShadow = true;
-         			node.receiveShadow = true;
-         			//self.model = node.parent;
-         			//self.model.scale.set(2,2,2);
-         		}
-			
-   		 	});
+				if ( node instanceof THREE.SkinnedMesh ) {
+					node.castShadow = true;
+					node.receiveShadow = true;
+					//self.model = node.parent;
+					//self.model.scale.set(2,2,2);
+				}
+
+			});
 
 			// set mixer for animations
 			self.mixer = new THREE.AnimationMixer(self.model);
@@ -476,6 +475,7 @@ class Player { //turn into class
 			self.uiHandler.addPlayer(self);
 			self.hasLoaded = true;
 		})
+
 	}
 
 	addScore(score) {

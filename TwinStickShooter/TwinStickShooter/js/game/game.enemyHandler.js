@@ -367,6 +367,9 @@ window.game.enemyHandler = function() {
 			}
 
 			if (_enemyHandler.numEnemies >= this.maxEnemies && _enemyHandler.enemies.length == 0) {
+				//Spawn trophy (currently just a mirrored sphere)
+				var mirrorTrophyPos = {x:0, y:5, z:0};
+				var mirrorTrophy = new MirrorTrophy1(this.cannon,this.three,mirrorTrophyPos);
 				this.uiHandler.showEndMenu(true);
 				//this.game.reset();
 			}
@@ -436,4 +439,30 @@ window.game.enemyHandler = function() {
 	}
 
 	return _enemyHandler;
+}
+
+//Creates and renders Mirrored Trophy at position specified by pos - {x,y,z}
+class MirrorTrophy1 {
+	constructor(cannon, three, pos) {
+		three.setUpCubeCamera();
+		this.reflectiveMaterial = new THREE.MeshLambertMaterial();
+		this.reflectiveMaterial.envMap = three.cubeCamera.renderTarget.texture;
+		this.shape = new CANNON.Sphere(2);
+
+		this.body = new cannon.createBody({
+			mass: 0,
+			shape: this.shape,
+			material: cannon.solidMaterial,
+			meshMaterial: this.reflectiveMaterial,
+			position: {
+				x: pos.x,
+				y: pos.y,
+				z: pos.z
+			},
+			castShadow: true,
+			collisionGroup: cannon.collisionGroup.solids,
+			collisionFilter: cannon.collisionGroup.solids | cannon.collisionGroup.player | cannon.collisionGroup.enemy// | cannon.collisionGroup.projectile
+		});
+		this.mesh = cannon.getMeshFromBody(this.body);
+	}
 }

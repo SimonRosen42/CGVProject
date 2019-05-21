@@ -26,6 +26,9 @@ class Level {
 
 		var room = new Room(RoomType.Start, roomPos, 20, 20, doorPos)
 		room.create(cannon,three)
+
+        var mirrorTrophyPos = {x:0, y:5, z:0};
+		var mirrorTrophy = new MirrorTrophy(cannon,three,mirrorTrophyPos);
 	}
 }
 
@@ -153,6 +156,87 @@ class Room{
 		grates.push(new Grate(cannon,three,{x:13,y:0.01,z:5})); //.01 - wallHeight
 		grates.push(new Grate(cannon,three,{x:8,y:0.01,z:-17})); //.01 - wallHeight
 		grates.push(new Grate(cannon,three,{x:5,y:0.01,z:-4})); //.01 - wallHeight
+	}
+}
+
+class MirrorTrophy{
+    constructor(cannon, three, pos) {
+		three.setUpCubeCamera();
+		this.reflectiveMaterial = new THREE.MeshLambertMaterial();
+        this.reflectiveMaterial.envMap = three.cubeCamera.renderTarget.texture;
+        this.shape = new CANNON.Sphere(2);
+
+        this.body = new cannon.createBody({
+            mass: 0,
+            shape: this.shape,
+            material: cannon.solidMaterial,
+            meshMaterial: this.reflectiveMaterial,
+            position: {
+                x: pos.x,
+                y: pos.y,
+                z: pos.z
+            },
+            castShadow: true,
+            collisionGroup: cannon.collisionGroup.solids,
+            collisionFilter: cannon.collisionGroup.solids | cannon.collisionGroup.player | cannon.collisionGroup.enemy// | cannon.collisionGroup.projectile
+        });
+        this.mesh = cannon.getMeshFromBody(this.body);
+    }
+
+    fuck(){
+		this.shape = new CANNON.Box(new CANNON.Vec3(1,1,1)); //1 is half of actual size
+		//load in the player model in glb format
+		var loader = new THREE.ObjLoader();
+		var filePath =  "models/trophy.obj";
+		console.log(filePath);
+		var self = this;
+		loader.load(filePath, function (obj) {
+
+			obj.scene.scale.set(0.75,0.75,0.75);
+
+			//self.model = obj.scene;
+
+			obj.scene.traverse( function( node ) {
+
+				//add shadows to the model
+				if ( node instanceof THREE.SkinnedMesh ) {
+					node.castShadow = true;
+					node.receiveShadow = true;
+					//self.model = node.parent;
+					//self.model.scale.set(2,2,2);
+				}
+
+			});
+
+			// set mixer for animations
+			self.mixer = new THREE.AnimationMixer(self.model);
+
+			this.reflectiveMaterial = new THREE.MeshLambertMaterial();
+			this.reflectiveMaterial.envMap = three.cubeCamera.renderTarget.texture;
+			//create player rigidbody
+			self.body = cannon.createBody({
+				//geometry: this.model,
+				position: {
+					x: 0,
+					y: 4,
+					z: 0
+				},
+				meshMaterial: this.reflectiveMaterial,
+				mass: 0,
+				mesh: self.model,
+				shape: self.shape,
+				material: cannon.playerPhysicsMaterial,
+				castShadow: true,
+				offset: new CANNON.Vec3(0,-0.8,0), //corrective offset for the model
+				collisionGroup: cannon.collisionGroup.player,
+				collisionFilter: cannon.collisionGroup.enemy | cannon.collisionGroup.solids
+			});
+
+			self.mesh = cannon.getMeshFromBody(self.body);
+			self.weapon = new Weapon(self, cannon);
+			self.uiHandler.addPlayer(self);
+			self.hasLoaded = true;
+		})
 	}
 }
 
@@ -293,7 +377,7 @@ window.game.levelHandler = function () {
 	var _levelHandler = {
 		cannon: null,
 		three: null,
-		gratez: grates,
+		gratez: grates, //Probs a reason for this
 		//initialise
 		init: function (c, t) {
 			_levelHandler.cannon = c;
