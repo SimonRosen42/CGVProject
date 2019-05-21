@@ -6,6 +6,10 @@ var weaponType = {
 	NORMAL: 2
 }
 
+var other_pickup = {
+	HEALTH_DRINK: 0
+}
+
 class pickup {
 	constructor(pos, cannon, key, playerHandler) {
 		this.mesh = null;
@@ -21,6 +25,8 @@ class pickup {
 		}
 		else if (key == weaponType.SHOTGUN) {
 			filePath = "models/shotgun.glb"
+		} else if (key == other_pickup.HEALTH_DRINK) {
+			filePath = "models/drink.glb"
 		}
 		var loader = new THREE.GLTFLoader();
 		loader.load(filePath, function (gltf) {
