@@ -351,9 +351,11 @@ window.game.enemyHandler = function() {
 			enemy.create(_enemyHandler.cannon, _enemyHandler.three, position, filePath);
 			_enemyHandler.enemies.push(enemy);
 			_enemyHandler.numEnemies++;
-			if (this.numEnemies % 10 == 0) {
-				this.pickups.push(new pickup(new THREE.Vector3(5,1,5), this.cannon, weaponType.SHOTGUN, this.playerHandler));
-		  		this.pickups.push(new pickup(new THREE.Vector3(-5,1,-5), this.cannon, weaponType.MACHINE_GUN, this.playerHandler));
+			if (this.numEnemies % 10 == 0) { //create weapon pickup
+				if (Math.random() < 0.5) 
+					this.pickups.push(new pickup(new THREE.Vector3(Math.random()*20-10,1,Math.random()*20-10), this.cannon, weaponType.SHOTGUN, this.playerHandler));
+				else
+		  			this.pickups.push(new pickup(new THREE.Vector3(Math.random()*20-10,1,Math.random()*20-10), this.cannon, weaponType.MACHINE_GUN, this.playerHandler));
 		  	}
 		},
 
@@ -388,6 +390,10 @@ window.game.enemyHandler = function() {
 							this.addEnemy(new THREE.Vector3(grates[temp].pos.x,grates[temp].pos.y,grates[temp].pos.z));
 						}
 						for (var i = 0; i < this.pickups.length; i++) {
+							if (this.pickups[i].timer.getElapsedTime() > 15) {
+								this.cannon.removeVisual(this.pickups[i].body);
+								this.pickups[i].done = true;
+							}
 							if (this.pickups[i].done) {
 								this.pickups.splice(i,1);
 							}
